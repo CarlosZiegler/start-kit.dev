@@ -1,6 +1,6 @@
 {
   "name": "create-start-kit-dev",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "CLI for scaffolding and configuring Start Kit projects",
   "type": "module",
   "license": "MIT",

@@ -98,8 +98,8 @@ export async function testDbConnection(
   try {
     const { SQL } = await import("bun");
     const sql = new SQL(url);
-    const result = sql.query("SELECT version()").get() as { version: string };
-    sql.close();
+    const [result] = await sql`SELECT version() as version`;
+    await sql.close();
     return { ok: true, version: result.version };
   } catch (error) {
     return {
