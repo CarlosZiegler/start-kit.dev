@@ -126,10 +126,10 @@ async function runWizard(state: SetupState): Promise<void> {
 function showUsage(): void {
   console.log("Usage:");
   console.log(
-    "  bunx @start-kit/cli create [project-name]   Create a new project"
+    "  bunx create-start-kit create [project-name]   Create a new project"
   );
   console.log(
-    "  bunx @start-kit/cli init [--step <phase>]    Setup existing project"
+    "  bunx create-start-kit init [--step <phase>]    Setup existing project"
   );
   console.log("");
   console.log("Phases: branding, features, database, env, infra");

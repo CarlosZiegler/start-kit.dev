@@ -1,7 +1,7 @@
 "use client";
 
 import { ClientOnly } from "@tanstack/react-router";
-import { Beaker, Building2, Home, Settings, Shield } from "lucide-react";
+import { Building2, Home, Settings, Shield } from "lucide-react";
 import type * as React from "react";
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
@@ -35,24 +35,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: t("SIDEBAR_OVERVIEW"),
       url: "/overview",
       icon: Home,
-    },
-    {
-      title: t("SIDEBAR_LAB"),
-      icon: Beaker,
-      children: [
-        {
-          title: t("SIDEBAR_CHAT"),
-          url: "/lab/chat",
-        },
-        {
-          title: t("LAB_BLOCK_GENERATOR_NAV"),
-          url: "/lab/block-generator",
-        },
-        {
-          title: t("LAB_MCP_APPS_NAV"),
-          url: "/lab/mcp-apps",
-        },
-      ],
     },
     {
       title: t("SIDEBAR_ORGANIZATION"),

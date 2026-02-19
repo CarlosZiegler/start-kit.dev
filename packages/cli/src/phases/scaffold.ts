@@ -1,27 +1,28 @@
 import { existsSync } from "node:fs";
 import { isCancel, log, spinner, text } from "@clack/prompts";
+import { downloadTemplate } from "giget";
 
 import { exec } from "../lib/helpers";
 import { isValidAppName, toKebabCase } from "../lib/validators";
 
-const REPO_URL = "https://github.com/CarlosZiegler/start-template.git";
+const TEMPLATE_URI = "gh:CarlosZiegler/start-kit.dev/apps/start-template#main";
 
-async function cloneRepo(targetDir: string): Promise<void> {
+async function fetchTemplate(targetDir: string): Promise<void> {
   const s = spinner();
-  s.start("Cloning template...");
+  s.start("Downloading template...");
 
-  const result = await exec(`git clone --depth 1 ${REPO_URL} "${targetDir}"`);
-
-  if (result.exitCode !== 0) {
-    s.stop("Clone failed");
-    log.error(result.stderr);
+  try {
+    await downloadTemplate(TEMPLATE_URI, {
+      dir: targetDir,
+      force: false,
+    });
+    s.stop("Template downloaded");
+  } catch (error) {
+    s.stop("Download failed");
+    log.error(String(error));
     process.exit(1);
   }
 
-  s.stop("Template cloned");
-
-  // Remove .git so user starts fresh
-  await exec(`rm -rf "${targetDir}/.git"`);
   await exec(`git -C "${targetDir}" init`);
 }
 
@@ -48,7 +49,7 @@ export async function runScaffold(projectNameArg?: string): Promise<string> {
     const name = await text({
       message: "What's your project name?",
       placeholder: "my-saas-app",
-      validate: (v) => {
+      validate: (v = "") => {
         if (!isValidAppName(v)) {
           return "Name must be 2-50 characters";
         }
@@ -60,7 +61,7 @@ export async function runScaffold(projectNameArg?: string): Promise<string> {
     projectName = name;
   }
 
-  const dirName = toKebabCase(projectName);
+  const dirName = toKebabCase(projectName as string);
   const targetDir = `${process.cwd()}/${dirName}`;
 
   if (existsSync(targetDir)) {
@@ -70,7 +71,7 @@ export async function runScaffold(projectNameArg?: string): Promise<string> {
 
   log.info(`Creating project in ./${dirName}`);
 
-  await cloneRepo(targetDir);
+  await fetchTemplate(targetDir);
   await installDeps(targetDir);
 
   // Remove the state file if it exists from the template
