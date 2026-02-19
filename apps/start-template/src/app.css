@@ -167,11 +167,3 @@
     }
   }
 }
-
-html:not(.hydrated) *,
-html:not(.hydrated) *::before,
-html:not(.hydrated) *::after {
-  transition: none !important;
-  animation-duration: 0s !important;
-  animation-delay: 0s !important;
-}

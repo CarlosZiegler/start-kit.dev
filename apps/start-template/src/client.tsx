@@ -10,5 +10,5 @@ hydrateRoot(
     </StrictMode>
   ) : (
     <StartClient />
-  )
+  ),
 );

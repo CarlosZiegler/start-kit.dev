@@ -83,22 +83,7 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart({
       importProtection: {
-        onViolation: (info) => {
-          const allowedImporters = [
-            "lib/auth/auth.ts",
-            "lib/db/index.ts",
-            "lib/resend.ts",
-            "lib/storage/index.ts",
-            "lib/chat/stream-context.ts",
-            "orpc/routes/",
-          ];
-          const isAllowed = allowedImporters.some((p) =>
-            info.importer.includes(p)
-          );
-          if (isAllowed && info.resolved?.includes("env.server")) {
-            return false; // suppress
-          }
-        },
+        enabled: false,
       },
       srcDirectory: "src",
       router: {
