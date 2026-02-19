@@ -1,0 +1,1494 @@
+---
+title: DataGridEnhanced
+description: Production-ready data table component with server-side pagination, search, sorting, filtering, row selection, and drag & drop. Built on TanStack Table.
+links:
+  tanstack_table: https://tanstack.com/table/latest
+  dnd_kit: https://dndkit.com/
+alwaysApply: false
+---
+
+import { InfoIcon } from "lucide-react"
+
+Production-ready composable data table with client/server pagination, URL-based search, sorting, filtering, column visibility, row selection, and drag & drop reordering.
+
+## Overview
+
+`DataGridEnhanced` is the **standard table component** for all data tables in this project. It provides a complete, production-ready solution with:
+
+- **Server-side pagination** with React Query + orpc integration
+- **URL-based search** with debouncing via `useDebouncedSearchParam`
+- **Composable API** with `.Toolbar`, `.Content`, and `.Pagination` subcomponents
+- **Controlled/uncontrolled state** for maximum flexibility
+- **Drag & drop** rows and columns (via dnd-kit)
+- **Row selection** with checkboxes
+- **Column visibility** toggle
+- **Loading & empty states** built-in
+- **Accessibility** compliant (ARIA attributes, keyboard navigation)
+- **Type-safe** with TypeScript
+
+<Callout icon={<InfoIcon />}>
+**Key Principle**: All table logic lives in the route file. No separate table components. Follow the Dashboard pattern.
+</Callout>
+
+## Architecture
+
+### Component Composition
+
+DataGridEnhanced uses a **composable pattern** with three main subcomponents:
+
+```tsx
+<DataGridEnhanced columns={columns} data={data} pagination={pagination}>
+  <DataGridEnhanced.Toolbar searchable searchBind={bind} />
+  <DataGridEnhanced.Content emptyMessage="No results found." />
+  <DataGridEnhanced.Pagination showRowsPerPage />
+</DataGridEnhanced>
+```
+
+### Context-Based Design
+
+The parent `DataGridEnhanced` provides table state via React Context. Subcomponents access this via `useDataGridEnhanced()` hook internally. You never need to pass `table` explicitly to child components.
+
+### Controlled vs Uncontrolled State
+
+DataGridEnhanced supports both patterns:
+
+- **Controlled**: Pass `pagination`, `onPaginationChange`, `sorting`, `onSortingChange` props
+- **Uncontrolled**: Omit props; component manages state internally
+
+**Recommendation**: Use controlled state for server-side pagination/sorting. Use uncontrolled for client-side only.
+
+## Core Features
+
+### 1. Pagination
+
+**Client-side pagination** (default):
+
+```tsx
+<DataGridEnhanced columns={columns} data={allData} initialPageSize={10}>
+  <DataGridEnhanced.Content />
+  <DataGridEnhanced.Pagination />
+</DataGridEnhanced>
+```
+
+**Server-side pagination** (manual mode):
+
+```tsx
+const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+
+<DataGridEnhanced
+  columns={columns}
+  data={pageData}
+  manualPagination={true}
+  pageCount={Math.ceil(totalCount / pagination.pageSize)}
+  pagination={pagination}
+  onPaginationChange={setPagination}
+>
+  <DataGridEnhanced.Pagination showRowsPerPage />
+</DataGridEnhanced>;
+```
+
+### 2. Search (URL-based with Debouncing)
+
+Use `useDebouncedSearchParam` hook for URL-synchronized search:
+
+```tsx
+import { useDebouncedSearchParam } from "@/hooks/use-debounced-search-param";
+
+export const Route = createFileRoute("/agents/")({
+  component: RouteComponent,
+  validateSearch: z.object({
+    query: z.string().optional(),
+  }),
+});
+
+function RouteComponent() {
+  const { bind, searchValue } = useDebouncedSearchParam(Route, "query");
+
+  const { data } = useQuery(
+    orpc.agents.list.queryOptions({
+      input: {
+        search: searchValue || undefined,
+      },
+    })
+  );
+
+  return (
+    <DataGridEnhanced columns={columns} data={data?.data ?? []}>
+      <DataGridEnhanced.Toolbar
+        searchable={true}
+        searchBind={bind}
+        searchPlaceholder="Search agents..."
+      />
+      <DataGridEnhanced.Content />
+    </DataGridEnhanced>
+  );
+}
+```
+
+**Key points**:
+
+- Add `validateSearch` to Route config
+- Use `searchBind={bind}` (NOT `onSearchChange` or `searchColumn`)
+- Search updates URL query params automatically
+- Debouncing handled by hook (500ms default)
+
+### 3. Sorting
+
+Sorting is built-in. Enable by adding `enableSorting: true` to column definitions:
+
+```tsx
+const columns: ColumnDef<Agent>[] = [
+  {
+    accessorKey: "name",
+    header: "Name",
+    enableSorting: true,
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Created",
+    enableSorting: true,
+  },
+];
+```
+
+For server-side sorting, lift sorting state:
+
+```tsx
+const [sorting, setSorting] = useState<SortingState>([]);
+
+const { data } = useQuery(
+  orpc.agents.list.queryOptions({
+    input: {
+      sortBy: sorting[0]?.id,
+      sortOrder: sorting[0]?.desc ? "desc" : "asc",
+    },
+  })
+);
+
+<DataGridEnhanced
+  sorting={sorting}
+  onSortingChange={setSorting}
+  // ...
+/>;
+```
+
+### 4. Column Visibility
+
+Enable column visibility toggle:
+
+```tsx
+<DataGridEnhanced.Toolbar
+  searchable={true}
+  searchBind={bind}
+  showColumnVisibility={true} // Adds "Columns" dropdown
+/>
+```
+
+Columns are hideable by default unless you set `enableHiding: false` in column def.
+
+### 5. Row Selection
+
+Enable row selection with checkboxes:
+
+```tsx
+import { createSelectColumn } from "@/components/ui/data-grid-enhanced";
+
+const columns: ColumnDef<Agent>[] = [
+  createSelectColumn(), // Adds checkbox column
+  { accessorKey: "name", header: "Name" },
+  // ...
+];
+
+<DataGridEnhanced columns={columns} data={data} enableRowSelection={true}>
+  <DataGridEnhanced.Pagination showSelectedCount={true} />
+</DataGridEnhanced>;
+```
+
+For controlled selection:
+
+```tsx
+const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+
+<DataGridEnhanced
+  enableRowSelection={true}
+  rowSelection={rowSelection}
+  onRowSelectionChange={setRowSelection}
+  // ...
+/>;
+```
+
+### 6. Drag & Drop Rows
+
+Enable row reordering with drag & drop:
+
+```tsx
+import { createDragColumn } from "@/components/ui/data-grid-enhanced";
+
+const columns: ColumnDef<Agent>[] = [
+  createDragColumn((row) => row.id), // Adds drag handle column
+  { accessorKey: "name", header: "Name" },
+  // ...
+];
+
+<DataGridEnhanced
+  columns={columns}
+  data={data}
+  enableDragDrop={true}
+  getRowId={(row) => row.id}
+  onDragEnd={(newData) => {
+    // Update order on server
+    updateOrder(newData);
+  }}
+/>;
+```
+
+### 7. Loading & Empty States
+
+Built-in loading and empty states:
+
+```tsx
+const { data, isLoading } = useQuery(/* ... */);
+
+<DataGridEnhanced
+  columns={columns}
+  data={data?.data ?? []}
+  isLoading={isLoading}
+>
+  <DataGridEnhanced.Content emptyMessage="No agents found." />
+</DataGridEnhanced>;
+```
+
+Shows:
+
+- **Loading**: Centered spinner with "Loading..." text
+- **Empty**: Centered message when `data.length === 0`
+
+## Anatomy
+
+### DataGridEnhanced (Parent Component)
+
+Main container that provides table state via context.
+
+```tsx
+<DataGridEnhanced
+  data={TData[]}                    // Required: Array of data
+  columns={ColumnDef<TData>[]}      // Required: Column definitions
+
+  // Pagination (controlled)
+  manualPagination={boolean}        // Default: false (client-side)
+  pageCount={number}                // Required when manualPagination=true
+  pagination={PaginationState}      // { pageIndex: number; pageSize: number }
+  onPaginationChange={Function}     // (state) => void
+
+  // Sorting (controlled)
+  sorting={SortingState}            // [{ id: string; desc: boolean }]
+  onSortingChange={Function}        // (state) => void
+
+  // Row selection
+  enableRowSelection={boolean}      // Default: false
+  rowSelection={Record<string, boolean>}
+  onRowSelectionChange={Function}
+
+  // Drag & drop
+  enableDragDrop={boolean}          // Default: false
+  getRowId={(row) => string}        // Required when enableDragDrop=true
+  onDragEnd={(data) => void}
+
+  // Column visibility
+  columnVisibility={VisibilityState}
+  onColumnVisibilityChange={Function}
+
+  // Column filters
+  columnFilters={ColumnFiltersState}
+  onColumnFiltersChange={Function}
+
+  // Loading & styling
+  isLoading={boolean}               // Shows loading state
+  initialPageSize={number}          // Default: 10
+  getRowClassName={(row) => string} // Custom row styles
+>
+  {children}
+</DataGridEnhanced>
+```
+
+### DataGridEnhanced.Toolbar
+
+Search input, filters, and column visibility controls.
+
+```tsx
+<DataGridEnhanced.Toolbar
+  searchable={boolean}              // Default: false
+  searchBind={{                     // From useDebouncedSearchParam
+    value: string;
+    onChange: (e) => void;
+    onBlur?: () => void;
+  }}
+  searchPlaceholder={string}        // Default: "Search..."
+  showColumnVisibility={boolean}    // Default: false
+>
+  {children}  // Custom toolbar actions
+</DataGridEnhanced.Toolbar>
+```
+
+**Alternative (deprecated)**: `searchColumn` and `onSearchChange` props (client-side only, no URL sync). **Don't use these**.
+
+### DataGridEnhanced.Content
+
+Table body with rows, loading state, and empty state.
+
+```tsx
+<DataGridEnhanced.Content
+  className={string} // Custom table styles
+  emptyMessage={string} // Default: "No results."
+/>
+```
+
+### DataGridEnhanced.Pagination
+
+Pagination controls with page size selector.
+
+```tsx
+<DataGridEnhanced.Pagination
+  showRowsPerPage={boolean}         // Default: true
+  showSelectedCount={boolean}       // Default: true (if row selection enabled)
+  pageSizeOptions={number[]}        // Default: [10, 20, 30, 40, 50]
+/>
+```
+
+## Implementation Patterns
+
+### Pattern 1: Client-Side Pagination Only
+
+Simple table with local data:
+
+```tsx
+import { createFileRoute } from "@tanstack/react-router";
+import { ColumnDef } from "@tanstack/react-table";
+import { DataGridEnhanced } from "@/components/ui/data-grid-enhanced";
+
+export const Route = createFileRoute("/users/")({
+  component: RouteComponent,
+});
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+function RouteComponent() {
+  const users: User[] = [
+    /* local data */
+  ];
+
+  const columns: ColumnDef<User>[] = [
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "email", header: "Email" },
+  ];
+
+  return (
+    <DataGridEnhanced columns={columns} data={users} initialPageSize={10}>
+      <DataGridEnhanced.Content emptyMessage="No users found." />
+      <DataGridEnhanced.Pagination />
+    </DataGridEnhanced>
+  );
+}
+```
+
+### Pattern 2: Server-Side Pagination with orpc + React Query
+
+**Most common pattern**. All logic in route file:
+
+```tsx
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { ColumnDef } from "@tanstack/react-table";
+import { useState } from "react";
+import { z } from "zod";
+import { DataGridEnhanced } from "@/components/ui/data-grid-enhanced";
+import { useDebouncedSearchParam } from "@/hooks/use-debounced-search-param";
+import { orpc } from "@/orpc/orpc-client";
+
+export const Route = createFileRoute("/agents/")({
+  component: RouteComponent,
+  validateSearch: z.object({
+    query: z.string().optional(),
+  }),
+});
+
+type Agent = {
+  id: string;
+  name: string;
+  apiKey: string;
+  enabled: boolean;
+  lastRun: string | null;
+};
+
+function RouteComponent() {
+  const { bind, searchValue } = useDebouncedSearchParam(Route, "query");
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const { data, isLoading } = useQuery({
+    ...orpc.agents.list.queryOptions({
+      input: {
+        page: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        search: searchValue || undefined,
+      },
+    }),
+    placeholderData: keepPreviousData,
+  });
+
+  const columns: ColumnDef<Agent>[] = [
+    {
+      accessorKey: "name",
+      header: "Name",
+      cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
+    },
+    {
+      accessorKey: "apiKey",
+      header: "API Key",
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {row.original.apiKey?.slice(0, 4) +
+            "..." +
+            row.original.apiKey?.slice(-4)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "enabled",
+      header: "Status",
+      cell: ({ row }) => (
+        <span>{row.original.enabled ? "Active" : "Inactive"}</span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="flex h-full flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h1 className="font-bold text-3xl">Agents</h1>
+        <Button onClick={handleCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Agent
+        </Button>
+      </div>
+
+      <DataGridEnhanced
+        columns={columns}
+        data={data?.data ?? []}
+        getRowId={(row) => row.id}
+        isLoading={isLoading}
+        manualPagination={true}
+        pageCount={Math.ceil((data?.total ?? 0) / pagination.pageSize)}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+      >
+        <DataGridEnhanced.Toolbar
+          searchable={true}
+          searchBind={bind}
+          searchPlaceholder="Search agents..."
+        />
+        <DataGridEnhanced.Content emptyMessage="No agents found" />
+        <DataGridEnhanced.Pagination showRowsPerPage={true} />
+      </DataGridEnhanced>
+    </div>
+  );
+}
+```
+
+**Key points**:
+
+- Use `keepPreviousData` to prevent flickering
+- Reset `pageIndex` to 0 when search changes
+- Use `getRowId` for stable row identity
+- All state, queries, columns, and rendering in one file
+
+### Pattern 3: URL Search with Reset on Filter Change
+
+Reset pagination when search or filters change:
+
+```tsx
+import { useEffect, useState } from "react";
+
+function RouteComponent() {
+  const { bind, searchValue } = useDebouncedSearchParam(Route, "query");
+  const [ownerFilter, setOwnerFilter] = useState<"me" | "shared">("me");
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  // Reset to page 0 when filters change
+  useEffect(() => {
+    setPagination((prev) => {
+      if (prev.pageIndex === 0) return prev;
+      return { ...prev, pageIndex: 0 };
+    });
+  }, [ownerFilter, searchValue]);
+
+  const { data } = useQuery({
+    ...orpc.agents.list.queryOptions({
+      input: {
+        page: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        search: searchValue || undefined,
+        owner: ownerFilter,
+      },
+    }),
+    placeholderData: keepPreviousData,
+  });
+
+  return (
+    <>
+      <Tabs
+        value={ownerFilter}
+        onValueChange={(v) => setOwnerFilter(v as "me" | "shared")}
+      >
+        <TabsList>
+          <TabsTrigger value="me">Created by me</TabsTrigger>
+          <TabsTrigger value="shared">Shared with me</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <DataGridEnhanced
+        columns={columns}
+        data={data?.data ?? []}
+        manualPagination={true}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        pageCount={Math.ceil((data?.total ?? 0) / pagination.pageSize)}
+      >
+        <DataGridEnhanced.Toolbar searchable searchBind={bind} />
+        <DataGridEnhanced.Content />
+        <DataGridEnhanced.Pagination />
+      </DataGridEnhanced>
+    </>
+  );
+}
+```
+
+### Pattern 4: Row Selection with Bulk Actions
+
+Enable row selection and act on selected rows:
+
+```tsx
+import { createSelectColumn } from "@/components/ui/data-grid-enhanced";
+import { useState } from "react";
+
+function RouteComponent() {
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+
+  const columns: ColumnDef<Agent>[] = [
+    createSelectColumn(),
+    { accessorKey: "name", header: "Name" },
+    // ...
+  ];
+
+  const selectedIds = Object.keys(rowSelection).filter(
+    (id) => rowSelection[id]
+  );
+
+  return (
+    <>
+      {selectedIds.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span>{selectedIds.length} selected</span>
+          <Button
+            variant="destructive"
+            onClick={() => handleBulkDelete(selectedIds)}
+          >
+            Delete Selected
+          </Button>
+        </div>
+      )}
+
+      <DataGridEnhanced
+        columns={columns}
+        data={data}
+        enableRowSelection={true}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
+        getRowId={(row) => row.id}
+      >
+        <DataGridEnhanced.Content />
+        <DataGridEnhanced.Pagination showSelectedCount={true} />
+      </DataGridEnhanced>
+    </>
+  );
+}
+```
+
+### Pattern 5: Drag & Drop Reordering
+
+Reorder rows with drag & drop:
+
+```tsx
+import { createDragColumn } from "@/components/ui/data-grid-enhanced";
+import { useMutation } from "@tanstack/react-query";
+
+function RouteComponent() {
+  const updateOrderMutation = useMutation(
+    orpc.agents.updateOrder.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: orpc.agents.list.key() });
+        toast.success("Order updated");
+      },
+    })
+  );
+
+  const columns: ColumnDef<Agent>[] = [
+    createDragColumn((row) => row.id),
+    { accessorKey: "name", header: "Name" },
+    // ...
+  ];
+
+  return (
+    <DataGridEnhanced
+      columns={columns}
+      data={data}
+      enableDragDrop={true}
+      getRowId={(row) => row.id}
+      onDragEnd={(newData) => {
+        updateOrderMutation.mutate({
+          ids: newData.map((item) => item.id),
+        });
+      }}
+    >
+      <DataGridEnhanced.Content />
+    </DataGridEnhanced>
+  );
+}
+```
+
+### Pattern 6: Custom Row Styling
+
+Apply conditional styling to rows:
+
+```tsx
+function RouteComponent() {
+  const getRowClassName = (row: Agent) => {
+    if (!row.enabled) return "opacity-50";
+    if (row.lastRun && isRecent(row.lastRun))
+      return "bg-green-50 dark:bg-green-950";
+    return "";
+  };
+
+  return (
+    <DataGridEnhanced
+      columns={columns}
+      data={data}
+      getRowClassName={getRowClassName}
+    >
+      <DataGridEnhanced.Content />
+    </DataGridEnhanced>
+  );
+}
+```
+
+### Pattern 7: Tabs with Shared Search
+
+Multiple tables with shared search input:
+
+```tsx
+function RouteComponent() {
+  const { bind, searchValue } = useDebouncedSearchParam(Route, "query");
+  const [activeTab, setActiveTab] = useState<"members" | "invitations">(
+    "members"
+  );
+  const [membersPagination, setMembersPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [invitationsPagination, setInvitationsPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const { data: membersData } = useQuery({
+    ...organizationMembersOptions(orgId, {
+      page: membersPagination.pageIndex + 1,
+      pageSize: membersPagination.pageSize,
+      search: searchValue || undefined,
+    }),
+    placeholderData: keepPreviousData,
+  });
+
+  const { data: invitationsData } = useQuery({
+    ...organizationInvitationsOptions(orgId),
+    placeholderData: keepPreviousData,
+  });
+
+  // Filter invitations client-side
+  const filteredInvitations = useMemo(() => {
+    if (!searchValue) return invitationsData ?? [];
+    return (invitationsData ?? []).filter((inv) =>
+      inv.email.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [invitationsData, searchValue]);
+
+  return (
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList>
+        <TabsTrigger value="members">Members</TabsTrigger>
+        <TabsTrigger value="invitations">Invitations</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="members">
+        <Card>
+          <DataGridEnhanced
+            columns={membersColumns}
+            data={membersData?.members ?? []}
+            manualPagination={true}
+            pagination={membersPagination}
+            onPaginationChange={setMembersPagination}
+            pageCount={Math.ceil(
+              (membersData?.total ?? 0) / membersPagination.pageSize
+            )}
+          >
+            <DataGridEnhanced.Toolbar searchable searchBind={bind} />
+            <DataGridEnhanced.Content />
+            <DataGridEnhanced.Pagination />
+          </DataGridEnhanced>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="invitations">
+        <Card>
+          <DataGridEnhanced
+            columns={invitationsColumns}
+            data={filteredInvitations}
+            pagination={invitationsPagination}
+            onPaginationChange={setInvitationsPagination}
+          >
+            <DataGridEnhanced.Toolbar searchable searchBind={bind} />
+            <DataGridEnhanced.Content />
+            <DataGridEnhanced.Pagination />
+          </DataGridEnhanced>
+        </Card>
+      </TabsContent>
+    </Tabs>
+  );
+}
+```
+
+## Real-World Examples
+
+### Example 1: Dashboard Table (from `/routes/index.tsx`)
+
+Simple table with search and pagination:
+
+```tsx
+export const Route = createFileRoute("/")({
+  component: RouteComponent,
+  validateSearch: z.object({
+    query: z.string().optional(),
+  }),
+});
+
+type DataItem = {
+  id: number;
+  header: string;
+  type: string;
+  status: string;
+};
+
+function RouteComponent() {
+  const { bind, searchValue } = useDebouncedSearchParam(Route, "query");
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+
+  const { data, isLoading } = useQuery({
+    ...orpc.dashboard.list.queryOptions({
+      input: {
+        page: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        search: searchValue || undefined,
+      },
+    }),
+    placeholderData: keepPreviousData,
+  });
+
+  const columns: ColumnDef<DataItem>[] = [
+    createSelectColumn(),
+    {
+      accessorKey: "header",
+      header: "Header",
+      cell: ({ row }) => (
+        <div className="font-medium">{row.original.header}</div>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge
+          variant={row.original.status === "Done" ? "default" : "secondary"}
+        >
+          {row.original.status}
+        </Badge>
+      ),
+    },
+  ];
+
+  return (
+    <DataGridEnhanced
+      columns={columns}
+      data={data?.data ?? []}
+      enableRowSelection={true}
+      getRowId={(row) => row.id.toString()}
+      isLoading={isLoading}
+      manualPagination={true}
+      pageCount={Math.ceil((data?.total ?? 0) / pagination.pageSize)}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    >
+      <DataGridEnhanced.Toolbar
+        searchable={true}
+        searchBind={bind}
+        searchPlaceholder="Search headers..."
+        showColumnVisibility={true}
+      />
+      <DataGridEnhanced.Content emptyMessage="No results found." />
+      <DataGridEnhanced.Pagination showRowsPerPage={true} />
+    </DataGridEnhanced>
+  );
+}
+```
+
+### Example 2: Agents Table with Tabs (from `/routes/agents/index.tsx`)
+
+Table with owner filter tabs:
+
+```tsx
+function RouteComponent() {
+  const { bind, searchValue } = useDebouncedSearchParam(Route, "query");
+  const [ownerFilter, setOwnerFilter] = useState<"me" | "shared">("me");
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+
+  useEffect(() => {
+    setPagination((prev) =>
+      prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }
+    );
+  }, [ownerFilter, searchValue]);
+
+  const { data, isLoading } = useQuery({
+    ...orpc.agents.list.queryOptions({
+      input: {
+        page: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        search: searchValue || undefined,
+        owner: ownerFilter,
+      },
+    }),
+    placeholderData: keepPreviousData,
+  });
+
+  const columns: ColumnDef<Agent>[] = [
+    {
+      accessorKey: "name",
+      header: "Name",
+      cell: ({ row }) => (
+        <div
+          className="cursor-pointer font-medium hover:text-primary"
+          onClick={() => navigate({ to: `/agents/${row.original.id}` })}
+        >
+          {row.original.name}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "apiKey",
+      header: "API Key",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <span>
+            {row.original.apiKey?.slice(0, 4) +
+              "..." +
+              row.original.apiKey?.slice(-4)}
+          </span>
+          <IconCopy
+            className="h-4 w-4 cursor-pointer"
+            onClick={() => copyToClipboard(row.original.apiKey)}
+          />
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <Tabs
+        value={ownerFilter}
+        onValueChange={(v) => setOwnerFilter(v as "me" | "shared")}
+      >
+        <TabsList>
+          <TabsTrigger value="me">Created by me</TabsTrigger>
+          <TabsTrigger value="shared">Shared with me</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <DataGridEnhanced
+        columns={columns}
+        data={data?.data ?? []}
+        getRowId={(row) => row.id}
+        isLoading={isLoading}
+        manualPagination={true}
+        pageCount={Math.ceil((data?.total ?? 0) / pagination.pageSize)}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+      >
+        <DataGridEnhanced.Toolbar
+          searchable
+          searchBind={bind}
+          searchPlaceholder="Search"
+        />
+        <DataGridEnhanced.Content emptyMessage="No agents found" />
+        <DataGridEnhanced.Pagination showRowsPerPage={true} />
+      </DataGridEnhanced>
+    </>
+  );
+}
+```
+
+### Example 3: Organization Members & Invitations (from `/routes/organizations/index.tsx`)
+
+Complex example with two tables sharing search, dropdown actions, and mutations:
+
+```tsx
+function RouteComponent() {
+  const { bind, searchValue } = useDebouncedSearchParam(Route, "query");
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [invitationsPagination, setInvitationsPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  // Members query with server-side search
+  const { data: membersData } = useQuery({
+    ...organizationMembersOptions(orgId, {
+      page: pagination.pageIndex + 1,
+      pageSize: pagination.pageSize,
+      search: searchValue || undefined,
+    }),
+    placeholderData: keepPreviousData,
+  });
+
+  // Invitations query (client-side filter)
+  const { data: invitationsData } = useQuery({
+    ...organizationInvitationsOptions(orgId),
+    placeholderData: keepPreviousData,
+  });
+
+  const filteredInvitations = useMemo(() => {
+    if (!searchValue) return invitationsData ?? [];
+    return (invitationsData ?? []).filter((inv) =>
+      inv.email.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [invitationsData, searchValue]);
+
+  // Helper component for member actions
+  function MemberActionsDropdown({ member }: { member: Member }) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger>
+          <Button variant="ghost" size="icon">
+            <MoreVertical className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => handleUpdateRole(member.id)}>
+            Update Role
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleRemove(member.id)}>
+            Remove
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  const membersColumns: ColumnDef<Member>[] = [
+    {
+      accessorKey: "user",
+      header: "User",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Avatar>
+            <AvatarImage src={row.original.user.image ?? ""} />
+            <AvatarFallback>
+              {row.original.user.name?.[0] ?? "?"}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium">{row.original.user.name}</div>
+            <div className="text-muted-foreground text-sm">
+              {row.original.user.email}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "role",
+      header: "Role",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          {getRoleIcon(row.original.role)}
+          <span className="capitalize">{row.original.role}</span>
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => <MemberActionsDropdown member={row.original} />,
+    },
+  ];
+
+  return (
+    <Tabs defaultValue="members">
+      <TabsList>
+        <TabsTrigger value="members">Members</TabsTrigger>
+        <TabsTrigger value="invitations">Invitations</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="members">
+        <Card>
+          <CardHeader>
+            <CardTitle>Organization Members</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DataGridEnhanced
+              columns={membersColumns}
+              data={membersData?.members ?? []}
+              getRowId={(row) => row.id}
+              manualPagination={true}
+              pageCount={Math.ceil(
+                (membersData?.total ?? 0) / pagination.pageSize
+              )}
+              pagination={pagination}
+              onPaginationChange={setPagination}
+            >
+              <DataGridEnhanced.Toolbar
+                searchable={true}
+                searchBind={bind}
+                searchPlaceholder="Filter members..."
+              />
+              <DataGridEnhanced.Content emptyMessage="No members found." />
+              <DataGridEnhanced.Pagination />
+            </DataGridEnhanced>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="invitations">
+        <Card>
+          <CardHeader>
+            <CardTitle>Organization Invitations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DataGridEnhanced
+              columns={invitationsColumns}
+              data={filteredInvitations}
+              getRowId={(row) => row.id}
+              pagination={invitationsPagination}
+              onPaginationChange={setInvitationsPagination}
+            >
+              <DataGridEnhanced.Toolbar
+                searchable={true}
+                searchBind={bind}
+                searchPlaceholder="Filter invitations..."
+              />
+              <DataGridEnhanced.Content emptyMessage="No invitations." />
+              <DataGridEnhanced.Pagination />
+            </DataGridEnhanced>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
+  );
+}
+```
+
+## Integration with orpc + React Query
+
+Follow `requests.orpc-auth.mdc` patterns:
+
+### 1. Use queryOptions
+
+```tsx
+const { data, isLoading } = useQuery({
+  ...orpc.agents.list.queryOptions({
+    input: {
+      page: pagination.pageIndex,
+      pageSize: pagination.pageSize,
+      search: searchValue || undefined,
+    },
+  }),
+  placeholderData: keepPreviousData,
+});
+```
+
+### 2. Use mutationOptions with Invalidation
+
+```tsx
+const updateMutation = useMutation(
+  orpc.agents.update.mutationOptions({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orpc.agents.list.key() });
+      toast.success("Agent updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update agent");
+    },
+  })
+);
+```
+
+### 3. Handle Errors in UI (No Console)
+
+```tsx
+const deleteMutation = useMutation(
+  orpc.agents.delete.mutationOptions({
+    onError: (error: Error) => {
+      toast.error(error.message || t("COMMON_UNKNOWN_ERROR"));
+    },
+  })
+);
+```
+
+### 4. Use keepPreviousData for Smooth Transitions
+
+```tsx
+const { data } = useQuery({
+  ...orpc.agents.list.queryOptions({ input }),
+  placeholderData: keepPreviousData, // Prevents flash while loading
+});
+```
+
+## Helper Functions
+
+### createSelectColumn()
+
+Creates a checkbox column for row selection:
+
+```tsx
+import { createSelectColumn } from "@/components/ui/data-grid-enhanced";
+
+const columns: ColumnDef<Agent>[] = [
+  createSelectColumn(),
+  { accessorKey: "name", header: "Name" },
+  // ...
+];
+```
+
+### createDragColumn()
+
+Creates a drag handle column for row reordering:
+
+```tsx
+import { createDragColumn } from "@/components/ui/data-grid-enhanced";
+
+const columns: ColumnDef<Agent>[] = [
+  createDragColumn((row) => row.id),
+  { accessorKey: "name", header: "Name" },
+  // ...
+];
+```
+
+## Best Practices
+
+### Performance
+
+1. **Use `useMemo` for columns**: Prevent re-creation on every render
+
+   ```tsx
+   const columns = useMemo<ColumnDef<Agent>[]>(
+     () => [
+       { accessorKey: "name", header: "Name" },
+       // ...
+     ],
+     []
+   );
+   ```
+
+2. **Use `keepPreviousData`**: Prevent loading flicker during pagination
+
+   ```tsx
+   const { data } = useQuery({
+     ...orpc.agents.list.queryOptions({ input }),
+     placeholderData: keepPreviousData,
+   });
+   ```
+
+3. **Use `getRowId`**: Stable row identity for better React reconciliation
+
+   ```tsx
+   <DataGridEnhanced
+     getRowId={(row) => row.id}
+     // ...
+   />
+   ```
+
+4. **Reset pagination on filter change**: Avoid empty pages
+   ```tsx
+   useEffect(() => {
+     setPagination((prev) =>
+       prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }
+     );
+   }, [searchValue, filters]);
+   ```
+
+### Accessibility
+
+1. **Add `aria-label` to icon-only buttons**:
+
+   ```tsx
+   <Button variant="ghost" size="icon" aria-label="Delete agent">
+     <TrashIcon />
+   </Button>
+   ```
+
+2. **Use semantic HTML**: Tables are automatically accessible via TanStack Table
+
+3. **Provide empty/loading messages**: Built into `DataGridEnhanced.Content`
+
+### Error Handling
+
+1. **Surface errors in UI (toast, banner)**:
+
+   ```tsx
+   const mutation = useMutation(
+     orpc.agents.delete.mutationOptions({
+       onError: (error: Error) => {
+         toast.error(error.message || "Failed to delete agent");
+       },
+     })
+   );
+   ```
+
+2. **Never use `console.log` for errors**: Follow `requests.orpc-auth.mdc`
+
+3. **Localize error messages**:
+   ```tsx
+   toast.error(error.message || t("COMMON_UNKNOWN_ERROR"));
+   ```
+
+### Styling
+
+1. **Use `getRowClassName` for conditional styling**:
+
+   ```tsx
+   <DataGridEnhanced
+     getRowClassName={(row) => (row.enabled ? "" : "opacity-50")}
+   />
+   ```
+
+2. **Responsive layouts**: Tables auto-overflow horizontally
+
+3. **Consistent spacing**: Use Card components for table containers
+
+## Common Patterns
+
+### Pattern: Search with Clear Button
+
+Built-in when using `searchBind`:
+
+```tsx
+const { bind } = useDebouncedSearchParam(Route, "query");
+
+<DataGridEnhanced.Toolbar
+  searchable={true}
+  searchBind={bind} // Includes clear button automatically
+/>;
+```
+
+### Pattern: Loading Placeholder
+
+Show previous data while loading new page:
+
+```tsx
+const { data, isPlaceholderData } = useQuery({
+  ...orpc.agents.list.queryOptions({ input }),
+  placeholderData: keepPreviousData,
+});
+
+return (
+  <>
+    <DataGridEnhanced data={data?.data ?? []} isLoading={false} />
+    {isPlaceholderData && (
+      <div className="absolute right-4 bottom-20 rounded-md bg-muted px-3 py-1 text-xs">
+        Loading new page...
+      </div>
+    )}
+  </>
+);
+```
+
+### Pattern: Responsive Page Header
+
+```tsx
+<div className="flex items-center justify-between pb-6">
+  <div>
+    <h1 className="font-bold text-3xl">Agents</h1>
+    <p className="text-muted-foreground">Manage your AI agents</p>
+  </div>
+  <Button onClick={handleCreate}>
+    <Plus className="mr-2 h-4 w-4" />
+    New Agent
+  </Button>
+</div>
+```
+
+## Migration Guide
+
+### From ReusableDataTable to DataGridEnhanced
+
+**Before** (ReusableDataTable):
+
+```tsx
+<ReusableDataTable
+  columns={columns}
+  data={data}
+  total={total}
+  isLoading={isLoading}
+  searchColumn="name"
+/>
+```
+
+**After** (DataGridEnhanced):
+
+```tsx
+export const Route = createFileRoute("/agents/")({
+  component: RouteComponent,
+  validateSearch: z.object({
+    query: z.string().optional(),
+  }),
+});
+
+function RouteComponent() {
+  const { bind, searchValue } = useDebouncedSearchParam(Route, "query");
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+
+  const { data, isLoading } = useQuery({
+    ...orpc.agents.list.queryOptions({
+      input: {
+        page: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        search: searchValue || undefined,
+      },
+    }),
+    placeholderData: keepPreviousData,
+  });
+
+  return (
+    <DataGridEnhanced
+      columns={columns}
+      data={data?.data ?? []}
+      isLoading={isLoading}
+      manualPagination={true}
+      pageCount={Math.ceil((data?.total ?? 0) / pagination.pageSize)}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    >
+      <DataGridEnhanced.Toolbar searchable searchBind={bind} />
+      <DataGridEnhanced.Content />
+      <DataGridEnhanced.Pagination />
+    </DataGridEnhanced>
+  );
+}
+```
+
+**Changes**:
+
+1. Add `validateSearch` to Route config
+2. Use `useDebouncedSearchParam` instead of `searchColumn`
+3. Lift pagination state
+4. Use `manualPagination` and `pageCount`
+5. Pass `searchValue` to backend query
+6. Use composable subcomponents
+
+### From Separate Component Files to Route-Level Logic
+
+**Before** (separate component):
+
+```tsx
+// File: /features/agents-table.tsx
+export function AgentsTable() {
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const { data } = useQuery(/* ... */);
+  const columns = [
+    /* ... */
+  ];
+
+  return <DataGridEnhanced columns={columns} data={data} />;
+}
+
+// File: /routes/agents/index.tsx
+export function RouteComponent() {
+  return <AgentsTable />;
+}
+```
+
+**After** (all logic in route):
+
+```tsx
+// File: /routes/agents/index.tsx
+export const Route = createFileRoute("/agents/")({
+  component: RouteComponent,
+  validateSearch: z.object({
+    query: z.string().optional(),
+  }),
+});
+
+function RouteComponent() {
+  const { bind, searchValue } = useDebouncedSearchParam(Route, "query");
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+
+  const { data } = useQuery({
+    ...orpc.agents.list.queryOptions({
+      input: {
+        page: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        search: searchValue || undefined,
+      },
+    }),
+  });
+
+  const columns: ColumnDef<Agent>[] = [
+    /* ... */
+  ];
+
+  return (
+    <DataGridEnhanced
+      columns={columns}
+      data={data?.data ?? []}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    >
+      <DataGridEnhanced.Toolbar searchable searchBind={bind} />
+      <DataGridEnhanced.Content />
+    </DataGridEnhanced>
+  );
+}
+```
+
+**Benefits**:
+
+1. Direct access to Route for URL params
+2. No prop drilling
+3. Easier to test and reason about
+4. Follows Next.js App Router patterns
+
+## References
+
+- [TanStack Table Documentation](https://tanstack.com/table/latest)
+- [dnd-kit Documentation](https://dndkit.com/)
+- [React Query Documentation](https://tanstack.com/query/latest)
+- `requests.orpc-auth.mdc` - Request patterns
+- `forms.mdc` - Form patterns
+- `shadcn-ui-components.mdc` - UI components

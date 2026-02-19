@@ -1,0 +1,725 @@
+---
+description: Guide to shadcn/ui components used in this project, including InputGroup, Spinner, Kbd, ButtonGroup, Field, Item, and Empty.
+alwaysApply: false
+---
+
+Reference guide for shadcn/ui components used throughout the project. These components are copy-paste ready and work with all component libraries.
+
+## Overview
+
+This project uses shadcn/ui components from the **October 2025 release**, which introduced several new components specifically designed for common UI patterns:
+
+- **InputGroup**: Input with icons, buttons, labels and more
+- **Spinner**: Loading state indicator
+- **Kbd**: Display keyboard keys
+- **ButtonGroup**: Group related buttons together
+- **Field**: Complete form field abstraction
+- **Item**: Flexible container for lists and cards
+- **Empty**: Empty state displays
+
+See [shadcn/ui Changelog](https://ui.shadcn.com/docs/changelog) for full details.
+
+## InputGroup
+
+Input with icons, buttons, and addons. Perfect for search inputs, filters, and complex form controls.
+
+### Installation
+
+```bash
+npx shadcn@latest add input-group
+```
+
+### Basic Usage
+
+```tsx
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+  InputGroupText,
+} from "@/components/ui/input-group";
+import { Search } from "lucide-react";
+
+<InputGroup>
+  <InputGroupAddon align="inline-start">
+    <InputGroupText>
+      <Search />
+    </InputGroupText>
+  </InputGroupAddon>
+  <InputGroupInput placeholder="Search..." />
+</InputGroup>;
+```
+
+### With Clear Button
+
+```tsx
+import { X } from "lucide-react";
+
+<InputGroup>
+  <InputGroupInput
+    value={value}
+    onChange={(e) => setValue(e.target.value)}
+    placeholder="Search..."
+  />
+  {value && (
+    <InputGroupAddon align="inline-end">
+      <InputGroupButton
+        type="button"
+        variant="ghost"
+        size="icon-xs"
+        onClick={() => setValue("")}
+        aria-label="Clear"
+      >
+        <X />
+      </InputGroupButton>
+    </InputGroupAddon>
+  )}
+</InputGroup>;
+```
+
+### With Loading Spinner
+
+```tsx
+import { Spinner } from "@/components/ui/spinner";
+
+<InputGroup>
+  <InputGroupInput placeholder="Search..." />
+  {isLoading && (
+    <InputGroupAddon align="inline-end">
+      <InputGroupText>
+        <Spinner />
+      </InputGroupText>
+    </InputGroupAddon>
+  )}
+</InputGroup>;
+```
+
+### Alignment Options
+
+- `align="inline-start"`: Left side (icons, prefixes)
+- `align="inline-end"`: Right side (buttons, suffixes)
+- `align="block-start"`: Top (labels, headers)
+- `align="block-end"`: Bottom (descriptions, footers)
+
+### Key Points
+
+- `InputGroup` provides unified border/focus states
+- Use `InputGroupText` for static content (icons, labels)
+- Use `InputGroupButton` for interactive elements
+- Always add `aria-label` to icon-only buttons
+- Use `type="button"` to prevent form submission
+
+## Spinner
+
+Loading state indicator with customizable size and color.
+
+### Installation
+
+```bash
+npx shadcn@latest add spinner
+```
+
+### Basic Usage
+
+```tsx
+import { Spinner } from "@/components/ui/spinner";
+
+<Spinner />;
+```
+
+### In Buttons
+
+```tsx
+import { Button } from "@/components/ui/button";
+
+<Button disabled>
+  <Spinner />
+  Loading...
+</Button>;
+```
+
+### Custom Size
+
+```tsx
+<Spinner className="size-6" />
+<Spinner className="size-8" />
+```
+
+### Custom Spinner
+
+Replace with your own spinner:
+
+```tsx
+import { LoaderIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
+  return (
+    <LoaderIcon
+      role="status"
+      aria-label="Loading"
+      className={cn("size-4 animate-spin", className)}
+      {...props}
+    />
+  );
+}
+```
+
+### Key Points
+
+- Default size is `size-4` (16px)
+- Always includes `role="status"` and `aria-label="Loading"`
+- Use in buttons, input groups, or standalone
+- Customize with `className` prop
+
+## Kbd
+
+Display keyboard keys or shortcuts.
+
+### Installation
+
+```bash
+npx shadcn@latest add kbd
+```
+
+### Basic Usage
+
+```tsx
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
+
+<Kbd>Ctrl</Kbd>;
+```
+
+### Keyboard Shortcuts
+
+```tsx
+<KbdGroup>
+  <Kbd>Ctrl</Kbd>
+  <Kbd>K</Kbd>
+</KbdGroup>
+```
+
+### With Separators
+
+```tsx
+<KbdGroup>
+  <Kbd>⌘</Kbd>
+  <span>+</span>
+  <Kbd>K</Kbd>
+</KbdGroup>
+```
+
+### In Tooltips
+
+```tsx
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+<Tooltip>
+  <TooltipTrigger>
+    <Button>Search</Button>
+  </TooltipTrigger>
+  <TooltipContent>
+    Search{" "}
+    <KbdGroup>
+      <Kbd>⌘</Kbd>
+      <Kbd>K</Kbd>
+    </KbdGroup>
+  </TooltipContent>
+</Tooltip>;
+```
+
+### Key Points
+
+- Use `KbdGroup` to group multiple keys
+- Add separators with `<span>+</span>` or `<span>/</span>`
+- Works in buttons, tooltips, input groups
+- Use platform-specific keys (⌘ for Mac, Ctrl for Windows)
+
+## ButtonGroup
+
+Group related buttons with consistent styling.
+
+### Installation
+
+```bash
+npx shadcn@latest add button-group
+```
+
+### Basic Usage
+
+```tsx
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Button } from "@/components/ui/button";
+
+<ButtonGroup>
+  <Button variant="outline">Archive</Button>
+  <Button variant="outline">Report</Button>
+</ButtonGroup>;
+```
+
+### Nested Groups
+
+Create complex layouts with spacing:
+
+```tsx
+<ButtonGroup>
+  <ButtonGroup>
+    <Button variant="outline">Button 1</Button>
+    <Button variant="outline">Button 2</Button>
+  </ButtonGroup>
+  <ButtonGroup>
+    <Button variant="outline">Button 3</Button>
+    <Button variant="outline">Button 4</Button>
+  </ButtonGroup>
+</ButtonGroup>
+```
+
+### Split Buttons
+
+```tsx
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
+
+<ButtonGroup>
+  <Button variant="outline">Primary Action</Button>
+  <DropdownMenu>
+    <DropdownMenuTrigger>
+      <Button variant="outline" size="icon">
+        <MoreHorizontal />
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent>
+      <DropdownMenuItem>Option 1</DropdownMenuItem>
+      <DropdownMenuItem>Option 2</DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+</ButtonGroup>;
+```
+
+### Key Points
+
+- Groups buttons with consistent borders
+- Nest groups for complex layouts with spacing
+- Use with dropdowns for split button patterns
+- Works with all button variants
+
+## Field
+
+Complete form field abstraction with label, description, and error handling.
+
+### Installation
+
+```bash
+npx shadcn@latest add field
+```
+
+### Basic Usage
+
+```tsx
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+
+<Field>
+  <FieldLabel htmlFor="username">Username</FieldLabel>
+  <Input id="username" placeholder="Enter username" />
+  <FieldDescription>
+    Choose a unique username for your account.
+  </FieldDescription>
+</Field>;
+```
+
+### With Error State
+
+```tsx
+<Field data-invalid={!!error}>
+  <FieldLabel htmlFor="email">Email</FieldLabel>
+  <Input id="email" type="email" aria-invalid={!!error} />
+  {error && <FieldError errors={[{ message: error }]} />}
+</Field>
+```
+
+### Responsive Layout
+
+```tsx
+<Field orientation="responsive">
+  <FieldContent>
+    <FieldLabel htmlFor="setting">Setting Name</FieldLabel>
+    <FieldDescription>Description of the setting.</FieldDescription>
+  </FieldContent>
+  <Input id="setting" />
+</Field>
+```
+
+### With Checkbox
+
+```tsx
+import { Checkbox } from "@/components/ui/checkbox";
+
+<Field orientation="horizontal">
+  <Checkbox id="terms" />
+  <FieldLabel htmlFor="terms">I agree to the terms and conditions</FieldLabel>
+</Field>;
+```
+
+### Field Groups
+
+```tsx
+import { FieldSet, FieldLegend, FieldGroup } from "@/components/ui/field";
+
+<FieldSet>
+  <FieldLegend>Account Settings</FieldLegend>
+  <FieldGroup>
+    <Field>
+      <FieldLabel htmlFor="name">Name</FieldLabel>
+      <Input id="name" />
+    </Field>
+    <Field>
+      <FieldLabel htmlFor="email">Email</FieldLabel>
+      <Input id="email" type="email" />
+    </Field>
+  </FieldGroup>
+</FieldSet>;
+```
+
+### Key Points
+
+- Use `data-invalid` on `Field` for error styling
+- Use `aria-invalid` on form controls
+- Use `htmlFor` on labels for accessibility
+- `orientation="responsive"` switches layout at container width
+- Works with all form controls (Input, Select, Checkbox, etc.)
+
+## Item
+
+Flexible container for lists, cards, and content displays.
+
+### Installation
+
+```bash
+npx shadcn@latest add item
+```
+
+### Basic Usage
+
+```tsx
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Home } from "lucide-react";
+
+<Item>
+  <ItemMedia variant="icon">
+    <Home />
+  </ItemMedia>
+  <ItemContent>
+    <ItemTitle>Dashboard</ItemTitle>
+    <ItemDescription>Overview of your account and activity.</ItemDescription>
+  </ItemContent>
+</Item>;
+```
+
+### With Avatar
+
+```tsx
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+<Item>
+  <ItemMedia variant="avatar">
+    <Avatar>
+      <AvatarImage src="/avatar.jpg" />
+      <AvatarFallback>JD</AvatarFallback>
+    </Avatar>
+  </ItemMedia>
+  <ItemContent>
+    <ItemTitle>John Doe</ItemTitle>
+    <ItemDescription>john@example.com</ItemDescription>
+  </ItemContent>
+</Item>;
+```
+
+### As Link
+
+```tsx
+<Item>
+  <a href="/overview">
+    <ItemMedia variant="icon">
+      <Home />
+    </ItemMedia>
+    <ItemContent>
+      <ItemTitle>Dashboard</ItemTitle>
+      <ItemDescription>View your overview</ItemDescription>
+    </ItemContent>
+  </a>
+</Item>
+```
+
+### Item List
+
+```tsx
+import { ItemGroup } from "@/components/ui/item";
+
+<ItemGroup>
+  <Item>...</Item>
+  <Item>...</Item>
+  <Item>...</Item>
+</ItemGroup>;
+```
+
+### Key Points
+
+- `ItemMedia` supports `variant="icon"` or `variant="avatar"`
+- Use `` to render as link or button
+- `ItemGroup` for lists with proper spacing
+- Flexible layout adapts to content
+
+## Empty
+
+Empty state displays for no data, no results, or empty lists.
+
+### Installation
+
+```bash
+npx shadcn@latest add empty
+```
+
+### Basic Usage
+
+```tsx
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Inbox } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+<Empty>
+  <EmptyMedia variant="icon">
+    <Inbox />
+  </EmptyMedia>
+  <EmptyTitle>No messages</EmptyTitle>
+  <EmptyDescription>You don't have any messages yet.</EmptyDescription>
+  <EmptyContent>
+    <Button>Send a message</Button>
+  </EmptyContent>
+</Empty>;
+```
+
+### With Search Input
+
+```tsx
+import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
+
+<Empty>
+  <EmptyMedia variant="icon">
+    <Search />
+  </EmptyMedia>
+  <EmptyTitle>No results found</EmptyTitle>
+  <EmptyDescription>Try adjusting your search terms.</EmptyDescription>
+  <EmptyContent>
+    <InputGroup>
+      <InputGroupInput placeholder="Search again..." />
+    </InputGroup>
+  </EmptyContent>
+</Empty>;
+```
+
+### With Avatar
+
+```tsx
+<Empty>
+  <EmptyMedia variant="avatar">
+    <Avatar>
+      <AvatarFallback>?</AvatarFallback>
+    </Avatar>
+  </EmptyMedia>
+  <EmptyTitle>No users found</EmptyTitle>
+  <EmptyDescription>Start by inviting team members.</EmptyDescription>
+</Empty>
+```
+
+### Key Points
+
+- Use for empty tables, lists, search results
+- `EmptyMedia` supports `variant="icon"` or `variant="avatar"`
+- `EmptyContent` for actions (buttons, inputs)
+- Center-aligned by default
+
+## Best Practices
+
+### Accessibility
+
+1. **Labels**: Always use `htmlFor` on `FieldLabel` and `Label`
+2. **ARIA**: Add `aria-label` to icon-only buttons
+3. **Invalid State**: Use `aria-invalid` on form controls
+4. **Loading**: Spinner includes `role="status"` and `aria-label="Loading"`
+5. **Buttons**: Always use `type="button"` for non-submit buttons
+
+### Performance
+
+1. **Conditional Rendering**: Only render addons when needed (clear button, spinner)
+2. **Memoization**: Use `useMemo` for expensive computations
+3. **Debouncing**: Debounce search inputs with TanStack Pacer
+
+### Styling
+
+1. **Consistency**: Use shadcn/ui components for consistent styling
+2. **Variants**: Leverage built-in variants (size, variant, align)
+3. **Customization**: Use `className` for custom styling
+4. **Responsive**: Use `orientation="responsive"` on Field
+
+### Integration
+
+1. **Forms**: Use Field with React Hook Form or TanStack Form
+2. **Data Tables**: Use InputGroup for search, filters
+3. **Empty States**: Use Empty for no data scenarios
+4. **Loading**: Use Spinner in buttons, input groups, tables
+
+## Common Patterns
+
+### Search with Clear and Loading
+
+```tsx
+import { Search, X } from "lucide-react";
+import { useDebouncedCallback } from "@tanstack/react-pacer";
+
+function SearchInput() {
+  const [value, setValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const debouncedSearch = useDebouncedCallback(
+    async (query: string) => {
+      setIsLoading(true);
+      await performSearch(query);
+      setIsLoading(false);
+    },
+    { wait: 500 }
+  );
+
+  return (
+    <InputGroup>
+      <InputGroupAddon align="inline-start">
+        <InputGroupText>
+          <Search />
+        </InputGroupText>
+      </InputGroupAddon>
+      <InputGroupInput
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          debouncedSearch.maybeExecute(e.target.value);
+        }}
+        placeholder="Search..."
+      />
+      {isLoading && (
+        <InputGroupAddon align="inline-end">
+          <InputGroupText>
+            <Spinner />
+          </InputGroupText>
+        </InputGroupAddon>
+      )}
+      {!isLoading && value && (
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => setValue("")}
+            aria-label="Clear search"
+          >
+            <X />
+          </InputGroupButton>
+        </InputGroupAddon>
+      )}
+    </InputGroup>
+  );
+}
+```
+
+### Form Field with Validation
+
+```tsx
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const schema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+function EmailField() {
+  const form = useForm({
+    resolver: zodResolver(schema),
+  });
+
+  return (
+    <Controller
+      name="email"
+      control={form.control}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid}>
+          <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+          <Input
+            {...field}
+            id={field.name}
+            type="email"
+            aria-invalid={fieldState.invalid}
+          />
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
+      )}
+    />
+  );
+}
+```
+
+### Empty State with Action
+
+```tsx
+function EmptyTableState() {
+  return (
+    <Empty>
+      <EmptyMedia variant="icon">
+        <Inbox />
+      </EmptyMedia>
+      <EmptyTitle>No data available</EmptyTitle>
+      <EmptyDescription>
+        Get started by adding your first item.
+      </EmptyDescription>
+      <EmptyContent>
+        <Button onClick={handleAdd}>
+          <Plus />
+          Add Item
+        </Button>
+      </EmptyContent>
+    </Empty>
+  );
+}
+```
+
+## References
+
+- [shadcn/ui Documentation](https://ui.shadcn.com/docs)
+- [shadcn/ui Changelog - October 2025](https://ui.shadcn.com/docs/changelog)
+- [shadcn/ui Components](https://ui.shadcn.com/docs/components)

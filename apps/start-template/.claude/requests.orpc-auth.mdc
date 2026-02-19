@@ -1,0 +1,269 @@
+---
+title: Requests (orpc + Auth)
+description: Patterns for React Query mutations/queries using orpc and Better Auth.
+links:
+  auth: https://better-auth.com
+  orpc: https://orpc.unnoq.com/docs/integrations/tanstack-query
+---
+
+import { InfoIcon } from "lucide-react"
+
+Guidelines for building request flows: centralize options, surface errors to UI, avoid console, invalidate/refetch predictably.
+
+## Approach
+
+- Use React Query `useMutation`/`useQuery` with option factories.
+- For Auth: call `authClient` methods; throw on `result.error` so React Query handles failures.
+- For orpc: use `orpc.*.*.mutationOptions()` and `orpc.*.*.queryKey()`; use `queryOptions()` when you need fetch logic + defaults.
+- Handle success via navigation, toasts, refetch/invalidation; handle errors via `toast` or field errors. No `console`.
+
+<Callout icon={<InfoIcon />}>
+Prefer option factories (e.g., `signInWithSocialOptions`) for reuse and testability.
+</Callout>
+
+## Setup
+
+```ts showLineNumbers title="src/orpc/orpc-client.ts"
+import { createTanstackQueryUtils } from "@orpc/tanstack-query";
+
+export const orpc = createTanstackQueryUtils(client);
+```
+
+## Anatomy (Mutation)
+
+```ts showLineNumbers title="mutation-options.ts"
+import { mutationOptions } from "@tanstack/react-query";
+
+export const signInWithSocialOptions = () =>
+  mutationOptions({
+    mutationFn: async (provider: SocialProvider) => {
+      const result = await authClient.signIn.social({
+        provider,
+        callbackURL: new URL(
+          `/api/auth/callback/${provider}`,
+          window.location.origin
+        ).toString(),
+      });
+      if (result.error) {
+        throw new Error(result.error.message || "Social authentication failed");
+      }
+      return result;
+    },
+  });
+```
+
+Usage with navigation + UI errors:
+
+```tsx showLineNumbers title="component.tsx" {7,11}
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+
+const navigate = useNavigate();
+const signInWithSocial = useMutation({
+  ...signInWithSocialOptions(),
+  onSuccess: () => navigate({ to: "/dashboard" }),
+  onError: (error: Error) =>
+    toast.error(error.message || "Something went wrong"),
+});
+```
+
+## orpc Mutations
+
+Use generated `mutationOptions` to get proper keys/types. Refetch or invalidate on success. Handle errors with `toast`.
+
+```tsx showLineNumbers title="profile.tsx" {6,9,18}
+const uploadAvatar = useMutation(
+  orpc.profile.uploadAvatar.mutationOptions({
+    onSuccess: () => {
+      refetchSession();
+      toast.success(t("AVATAR_UPDATED"));
+    },
+    onError: (e: Error) => toast.error(e.message || t("COMMON_UNKNOWN_ERROR")),
+  })
+);
+
+const removeAvatar = useMutation(
+  orpc.profile.removeAvatar.mutationOptions({
+    onSuccess: () => {
+      refetchSession();
+      toast.success(t("AVATAR_REMOVED"));
+    },
+    onError: (e: Error) => toast.error(e.message || t("COMMON_UNKNOWN_ERROR")),
+  })
+);
+```
+
+## Query + Invalidation
+
+- Prefer `queryOptions`/factory functions for queries to get stable `queryKey`.
+- After mutating, either `refetchSession()` (auth state) or `queryClient.invalidateQueries({ queryKey })`.
+
+Example: invalidate Better Auth session
+
+```ts showLineNumbers title="invalidate-session.ts"
+queryClient.invalidateQueries({ queryKey: ["session"] });
+```
+
+Example: invalidate invitations list for an organization
+
+```ts showLineNumbers title="invalidate-invitations.ts" {1-4}
+// Invalidate invitations for this org
+queryClient.invalidateQueries({
+  queryKey: organizationInvitationsOptions(organizationId).queryKey,
+});
+```
+
+Example: invalidate orpc query via its `queryKey()`
+
+```ts showLineNumbers title="invalidate-orpc.ts"
+// Use the generated queryKey() helper
+const key = orpc.todos.getAll.queryKey();
+queryClient.invalidateQueries({ queryKey: key });
+```
+
+Key helpers cheatsheet:
+
+- `.key()` family match
+- `.queryKey()` regular queries
+- `.streamedKey()` streamed queries
+- `.infiniteKey()` infinite queries
+- `.mutationKey()` mutations
+
+## Queries (Options)
+
+```tsx showLineNumbers title="useQuery.tsx"
+const query = useQuery(
+  orpc.planet.find.queryOptions({
+    input: { id: 123 },
+    context: { cache: true },
+    // additional TanStack Query options
+  })
+);
+```
+
+Streamed queries (append events):
+
+```tsx showLineNumbers title="streamed.tsx"
+const q = useQuery(
+  orpc.streamed.experimental_streamedOptions({
+    input: { id: 123 },
+    context: { cache: true },
+    queryFnOptions: { refetchMode: "reset", maxChunks: 3 },
+    retry: true,
+  })
+);
+```
+
+Live queries (latest event only):
+
+```tsx showLineNumbers title="live.tsx"
+const q = useQuery(
+  orpc.live.experimental_liveOptions({
+    input: { id: 123 },
+    context: { cache: true },
+    retry: true,
+  })
+);
+```
+
+Infinite queries:
+
+```tsx showLineNumbers title="infinite.tsx"
+const q = useInfiniteQuery(
+  orpc.planet.list.infiniteOptions({
+    input: (page: number | undefined) => ({ limit: 10, offset: page }),
+    context: { cache: true },
+    initialPageParam: undefined,
+    getNextPageParam: (last) => last.nextPageParam,
+  })
+);
+```
+
+## Calling Clients
+
+```ts showLineNumbers title="call.ts"
+const planet = await orpc.planet.find.call({ id: 123 });
+```
+
+## Reactive Options
+
+```tsx showLineNumbers title="reactive.tsx"
+const q = useQuery(() =>
+  orpc.planet.find.queryOptions({ input: { id: id() } })
+);
+```
+
+## Client Context + Keys
+
+- Context excluded from keys; override `queryKey` if needed.
+- Prefer built-in `retry` over custom retry plugins.
+
+```tsx showLineNumbers title="context-keys.tsx"
+useQuery(
+  orpc.planet.find.queryOptions({
+    context: { cache: true },
+    queryKey: [["planet", "find"], { context: { cache: true } }],
+    retry: true,
+  })
+);
+```
+
+## Error Handling (type-safe)
+
+```ts showLineNumbers title="isDefinedError.ts"
+import { isDefinedError } from "@orpc/client";
+
+const mutation = useMutation(
+  orpc.planet.create.mutationOptions({
+    onError: (error) => {
+      if (isDefinedError(error)) {
+        // handle type-safe error
+      }
+    },
+  })
+);
+
+if (mutation.error && isDefinedError(mutation.error)) {
+  // render error state
+}
+```
+
+## skipToken
+
+```tsx showLineNumbers title="skip-token.tsx"
+import { skipToken } from "@orpc/tanstack-query";
+
+useQuery(
+  orpc.planet.list.queryOptions({
+    input: search ? { search } : skipToken,
+  })
+);
+
+useInfiniteQuery(
+  orpc.planet.list.infiniteOptions({
+    input: search
+      ? (offset: number | undefined) => ({ limit: 10, offset, search })
+      : skipToken,
+    initialPageParam: undefined,
+    getNextPageParam: (last) => last.nextPageParam,
+  })
+);
+```
+
+## Hydration
+
+- Configure TanStack Query hydration with an RPC JSON serializer for oRPC types.
+
+## Error Handling Rules
+
+- No `console`.
+- Throw inside `mutationFn` when backend returns an error.
+- Surface errors via `toast`, page banner, or field errors.
+- Localize messages with `t()`.
+
+## Notes
+
+- Client-only values (`window.location.origin`) are safe in event handlers/mutations.
+- Keep callbacks side-effectful but small; move heavy logic to server.
+- Always pass `type="button"` for non-submit buttons.

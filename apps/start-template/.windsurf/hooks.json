@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "post_write_code": [
+      {
+        "command": "bun x ultracite fix",
+        "show_output": true
+      }
+    ]
+  }
+}
