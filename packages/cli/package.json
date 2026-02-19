@@ -1,5 +1,5 @@
 {
-  "name": "create-start-kit",
+  "name": "create-start-kit-dev",
   "version": "0.1.0",
   "description": "CLI for scaffolding and configuring Start Kit projects",
   "type": "module",
@@ -29,7 +29,7 @@
     "create"
   ],
   "bin": {
-    "create-start-kit": "./dist/index.mjs"
+    "create-start-kit-dev": "./dist/index.mjs"
   },
   "files": [
     "dist"

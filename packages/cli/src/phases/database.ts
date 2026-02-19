@@ -44,7 +44,7 @@ export async function runDatabase(state: SetupState): Promise<SetupState> {
       log.error(`get-db failed: ${result.stderr}`);
       log.info("You can try manually: npx get-db --yes");
       log.info(
-        "Or provide your own DATABASE_URL and re-run: bunx create-start-kit init --step database"
+        "Or provide your own DATABASE_URL and re-run: bunx create-start-kit-dev init --step database"
       );
       process.exit(1);
     }

@@ -5,7 +5,7 @@ Auth-first SaaS boilerplate. Fast, typed, accessible.
 ## Quick Start
 
 ```bash
-bunx create-start-kit create my-app
+bunx create-start-kit-dev create my-app
 ```
 
 Or manually:

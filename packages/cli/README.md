@@ -1,4 +1,4 @@
-# create-start-kit
+# create-start-kit-dev
 
 CLI for scaffolding and configuring [Start Kit](https://github.com/CarlosZiegler/start-kit.dev) projects.
 
@@ -7,7 +7,7 @@ CLI for scaffolding and configuring [Start Kit](https://github.com/CarlosZiegler
 ### Create a new project
 
 ```bash
-bunx create-start-kit create my-app
+bunx create-start-kit-dev create my-app
 ```
 
 This downloads the template, installs dependencies, and runs the interactive setup wizard.
@@ -15,13 +15,13 @@ This downloads the template, installs dependencies, and runs the interactive set
 ### Initialize an existing project
 
 ```bash
-bunx create-start-kit init
+bunx create-start-kit-dev init
 ```
 
 ### Run a specific setup phase
 
 ```bash
-bunx create-start-kit init --step database
+bunx create-start-kit-dev init --step database
 ```
 
 ## Setup Phases

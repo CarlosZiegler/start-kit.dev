@@ -5,7 +5,7 @@ Production-ready SaaS starter built with TanStack Start, React 19, and Bun.
 ## Quick Start
 
 ```bash
-bunx create-start-kit create my-app
+bunx create-start-kit-dev create my-app
 ```
 
 The interactive CLI walks you through branding, features, database, environment, and infrastructure setup.
@@ -46,7 +46,7 @@ start-kit.dev/
   apps/
     start-template/    # The SaaS template app
   packages/
-    cli/               # create-start-kit CLI
+    cli/               # create-start-kit-dev CLI
 ```
 
 Turborepo monorepo managed with Bun workspaces.
