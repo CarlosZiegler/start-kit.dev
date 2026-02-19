@@ -78,7 +78,7 @@ export async function runDatabase(state: SetupState): Promise<SetupState> {
     const url = await text({
       message: "Enter your DATABASE_URL:",
       placeholder: "postgresql://user:pass@host:5432/mydb",
-      validate: (v) => {
+      validate: (v = "") => {
         if (!isValidPostgresUrl(v)) {
           return "Must start with postgresql:// or postgres://";
         }
