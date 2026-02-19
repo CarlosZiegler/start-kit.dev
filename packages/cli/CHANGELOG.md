@@ -2,13 +2,21 @@
 
 All notable changes to `create-start-kit-dev` will be documented in this file.
 
-## [0.1.5] - 2026-02-19
+## [0.1.6] - 2026-02-19
 
 ### Fixed
 
 - Fix `db:push` failing during setup: write placeholder env vars before running drizzle-kit so `env.server.ts` validation passes
 - Add `--force` flag to `drizzle-kit push` to skip interactive confirmation prompts in non-TTY context
 - Run `drizzle-kit push` directly instead of via `bun run db:push` to control env loading
+- Fix TypeScript error in database validate callback
+
+## [0.1.5] - 2026-02-19
+
+### Added
+
+- `publishConfig` with explicit `latest` tag and public access
+- `CHANGELOG.md` documenting all versions
 
 ## [0.1.4] - 2026-02-19
 
