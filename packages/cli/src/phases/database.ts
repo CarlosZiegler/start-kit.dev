@@ -2,6 +2,7 @@ import { confirm, isCancel, log, select, spinner, text } from "@clack/prompts";
 
 import {
   exec,
+  generateSecret,
   readEnvFile,
   testDbConnection,
   writeEnvFile,
@@ -9,6 +10,14 @@ import {
 import type { SetupState } from "../lib/state";
 import { markPhaseCompleted, saveState } from "../lib/state";
 import { isValidPostgresUrl } from "../lib/validators";
+
+// Minimum env vars required by env.server.ts for drizzle.config.ts to load
+const ENV_PLACEHOLDERS: Record<string, string> = {
+  RESEND_API_KEY: "re_dummy_replace_me",
+  S3_ACCESS_KEY_ID: "dummy_replace_me",
+  S3_SECRET_ACCESS_KEY: "dummy_replace_me",
+  S3_BUCKET: "dummy-bucket",
+};
 
 export async function runDatabase(state: SetupState): Promise<SetupState> {
   const dbChoice = await select({
@@ -107,23 +116,31 @@ export async function runDatabase(state: SetupState): Promise<SetupState> {
 
   if (shouldMigrate) {
     const ms = spinner();
-    ms.start("Running migrations...");
+    ms.start("Pushing schema to database...");
 
-    // Ensure DATABASE_URL is in .env for drizzle-kit
+    // Ensure DATABASE_URL + required placeholders are in .env so
+    // drizzle.config.ts can load (it imports env.server.ts which
+    // validates all required vars at import time)
     const envVars = readEnvFile(".env");
-    if (!envVars.DATABASE_URL) {
-      envVars.DATABASE_URL = databaseUrl;
-      writeEnvFile(".env", envVars);
+    envVars.DATABASE_URL = envVars.DATABASE_URL || databaseUrl;
+    envVars.BETTER_AUTH_SECRET =
+      envVars.BETTER_AUTH_SECRET || generateSecret();
+    for (const [key, value] of Object.entries(ENV_PLACEHOLDERS)) {
+      envVars[key] = envVars[key] || value;
     }
+    writeEnvFile(".env", envVars);
 
-    const migrateResult = await exec("bun run db:push");
+    // Use --force to skip interactive confirmation prompts
+    const migrateResult = await exec(
+      "bun --env-file=.env drizzle-kit push --force"
+    );
 
     if (migrateResult.exitCode !== 0) {
-      ms.stop("Migration failed");
+      ms.stop("Schema push failed");
       log.error(migrateResult.stderr);
-      log.info("You can run migrations later with: bun run db:push");
+      log.info("You can push later with: bun run db:push");
     } else {
-      ms.stop("Migrations applied!");
+      ms.stop("Schema pushed to database!");
     }
   }
 
