@@ -36,6 +36,7 @@ export function getEnvVarDefs(features: FeatureFlags): EnvVarDef[] {
     // AI
     { key: "OPENAI_API_KEY", required: false, feature: "ai" },
     { key: "ANTHROPIC_API_KEY", required: false, feature: "ai" },
+    { key: "GOOGLE_GENERATIVE_AI_API_KEY", required: false, feature: "ai" },
 
     // Stripe
     { key: "STRIPE_SECRET_KEY", required: false, feature: "stripe" },

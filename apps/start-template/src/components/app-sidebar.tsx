@@ -1,7 +1,7 @@
 "use client";
 
 import { ClientOnly } from "@tanstack/react-router";
-import { Building2, Home, Settings, Shield } from "lucide-react";
+import { Building2, Home, MessageSquare, Settings, Shield } from "lucide-react";
 import type * as React from "react";
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
@@ -49,6 +49,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/organizations/invitations/",
         },
       ],
+    },
+    {
+      title: "AI Chat",
+      url: "/chat",
+      icon: MessageSquare,
     },
     ...(isSuperAdmin
       ? [

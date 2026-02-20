@@ -1,9 +1,78 @@
 import { chat, toServerSentEventsStream } from "@tanstack/ai";
-import { openaiText } from "@tanstack/ai-openai";
+import { createAnthropicChat } from "@tanstack/ai-anthropic";
+import { createGeminiChat } from "@tanstack/ai-gemini";
+import { createOpenaiChat } from "@tanstack/ai-openai";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { auth } from "@/lib/auth/auth";
 import { getStreamContext } from "@/lib/chat/stream-context";
+
+type ChatProvider = "openai" | "anthropic" | "gemini";
+
+type ChatRequestBody = {
+  messages: unknown[];
+  conversationId?: string;
+  provider?: ChatProvider;
+  model?: string;
+  data?: {
+    provider?: ChatProvider;
+    model?: string;
+  };
+};
+
+const DEFAULT_PROVIDER: ChatProvider = "openai";
+
+const DEFAULT_MODELS: Record<ChatProvider, string> = {
+  openai: "gpt-5-mini",
+  anthropic: "claude-3-5-haiku-latest",
+  gemini: "gemini-2.0-flash",
+};
+
+function normalizeProvider(provider?: string): ChatProvider {
+  if (provider === "anthropic" || provider === "gemini") {
+    return provider;
+  }
+  return "openai";
+}
+
+function createAdapter(provider: ChatProvider, model?: string) {
+  const selectedModel = model?.trim() || DEFAULT_MODELS[provider];
+
+  if (provider === "anthropic") {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      throw new Error("ANTHROPIC_API_KEY is required for provider 'anthropic'");
+    }
+    return createAnthropicChat(
+      selectedModel as Parameters<typeof createAnthropicChat>[0],
+      apiKey
+    );
+  }
+
+  if (provider === "gemini") {
+    const apiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "GOOGLE_GENERATIVE_AI_API_KEY (or GEMINI_API_KEY) is required for provider 'gemini'"
+      );
+    }
+    return createGeminiChat(
+      selectedModel as Parameters<typeof createGeminiChat>[0],
+      apiKey
+    );
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is required for provider 'openai'");
+  }
+
+  return createOpenaiChat(
+    selectedModel as Parameters<typeof createOpenaiChat>[0],
+    apiKey
+  );
+}
 
 export const Route = createFileRoute("/api/chat/")({
   server: {
@@ -12,7 +81,7 @@ export const Route = createFileRoute("/api/chat/")({
         try {
           const [session, body, streamContext] = await Promise.all([
             auth.api.getSession({ headers: request.headers }),
-            request.json() as Promise<{ messages: unknown[]; conversationId?: string }>,
+            request.json() as Promise<ChatRequestBody>,
             getStreamContext(),
           ]);
 
@@ -21,13 +90,18 @@ export const Route = createFileRoute("/api/chat/")({
           }
 
           const { messages, conversationId } = body;
+          const provider = normalizeProvider(
+            body.provider ?? body.data?.provider ?? DEFAULT_PROVIDER
+          );
+          const model = body.model ?? body.data?.model;
+
           const abortController = new AbortController();
           const streamId = crypto.randomUUID();
 
           const createBaseStream = () => {
             const baseStream = chat({
-              adapter: openaiText("gpt-5-mini"),
-              messages,
+              adapter: createAdapter(provider, model),
+              messages: messages as any,
               conversationId,
             });
             return toServerSentEventsStream(baseStream, abortController);
@@ -36,19 +110,15 @@ export const Route = createFileRoute("/api/chat/")({
           let responseStream: ReadableStream<Uint8Array>;
 
           if (streamContext) {
-            // Wrap with resumable stream for persistence
             const resumable = await streamContext.createNewResumableStream(
               streamId,
               () => {
-                // Convert Uint8Array stream to string stream for resumable-stream
                 const baseStream = createBaseStream();
                 const decoder = new TextDecoder();
                 return baseStream.pipeThrough(
                   new TransformStream<Uint8Array, string>({
                     transform(chunk, controller) {
-                      controller.enqueue(
-                        decoder.decode(chunk, { stream: true })
-                      );
+                      controller.enqueue(decoder.decode(chunk, { stream: true }));
                     },
                   })
                 );
@@ -56,7 +126,6 @@ export const Route = createFileRoute("/api/chat/")({
             );
 
             if (resumable) {
-              // Convert back to Uint8Array for Response
               const encoder = new TextEncoder();
               responseStream = resumable.pipeThrough(
                 new TransformStream<string, Uint8Array>({
@@ -66,11 +135,9 @@ export const Route = createFileRoute("/api/chat/")({
                 })
               );
             } else {
-              // Stream already completed
               responseStream = createBaseStream();
             }
           } else {
-            // No Redis, use base stream directly
             responseStream = createBaseStream();
           }
 
@@ -81,6 +148,8 @@ export const Route = createFileRoute("/api/chat/")({
               Connection: "keep-alive",
               "X-Stream-Id": streamContext ? streamId : "",
               "X-Conversation-Id": conversationId ?? "",
+              "X-AI-Provider": provider,
+              "X-AI-Model": model ?? DEFAULT_MODELS[provider],
             },
           });
         } catch (error: unknown) {
