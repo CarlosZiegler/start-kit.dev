@@ -25,6 +25,7 @@ import { Route as ApiChatIndexRouteImport } from './routes/api/chat/index'
 import { Route as dashboardSettingsIndexRouteImport } from './routes/(dashboard)/settings/index'
 import { Route as dashboardOverviewIndexRouteImport } from './routes/(dashboard)/overview/index'
 import { Route as dashboardOrganizationsIndexRouteImport } from './routes/(dashboard)/organizations/index'
+import { Route as dashboardChatIndexRouteImport } from './routes/(dashboard)/chat/index'
 import { Route as authTwoFactorIndexRouteImport } from './routes/(auth)/two-factor/index'
 import { Route as ApiStorageSplatRouteImport } from './routes/api/storage/$'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
@@ -116,6 +117,11 @@ const dashboardOrganizationsIndexRoute =
     path: '/organizations/',
     getParentRoute: () => dashboardLayoutRoute,
   } as any)
+const dashboardChatIndexRoute = dashboardChatIndexRouteImport.update({
+  id: '/chat/',
+  path: '/chat/',
+  getParentRoute: () => dashboardLayoutRoute,
+} as any)
 const authTwoFactorIndexRoute = authTwoFactorIndexRouteImport.update({
   id: '/two-factor/',
   path: '/two-factor/',
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/storage/$': typeof ApiStorageSplatRoute
   '/two-factor/': typeof authTwoFactorIndexRoute
+  '/chat/': typeof dashboardChatIndexRoute
   '/organizations/': typeof dashboardOrganizationsIndexRoute
   '/overview/': typeof dashboardOverviewIndexRoute
   '/settings/': typeof dashboardSettingsIndexRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/storage/$': typeof ApiStorageSplatRoute
   '/two-factor': typeof authTwoFactorIndexRoute
+  '/chat': typeof dashboardChatIndexRoute
   '/organizations': typeof dashboardOrganizationsIndexRoute
   '/overview': typeof dashboardOverviewIndexRoute
   '/settings': typeof dashboardSettingsIndexRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/storage/$': typeof ApiStorageSplatRoute
   '/(auth)/two-factor/': typeof authTwoFactorIndexRoute
+  '/(dashboard)/chat/': typeof dashboardChatIndexRoute
   '/(dashboard)/organizations/': typeof dashboardOrganizationsIndexRoute
   '/(dashboard)/overview/': typeof dashboardOverviewIndexRoute
   '/(dashboard)/settings/': typeof dashboardSettingsIndexRoute
@@ -283,6 +292,7 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/api/storage/$'
     | '/two-factor/'
+    | '/chat/'
     | '/organizations/'
     | '/overview/'
     | '/settings/'
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/api/storage/$'
     | '/two-factor'
+    | '/chat'
     | '/organizations'
     | '/overview'
     | '/settings'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/api/storage/$'
     | '/(auth)/two-factor/'
+    | '/(dashboard)/chat/'
     | '/(dashboard)/organizations/'
     | '/(dashboard)/overview/'
     | '/(dashboard)/settings/'
@@ -473,6 +485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof dashboardOrganizationsIndexRouteImport
       parentRoute: typeof dashboardLayoutRoute
     }
+    '/(dashboard)/chat/': {
+      id: '/(dashboard)/chat/'
+      path: '/chat'
+      fullPath: '/chat/'
+      preLoaderRoute: typeof dashboardChatIndexRouteImport
+      parentRoute: typeof dashboardLayoutRoute
+    }
     '/(auth)/two-factor/': {
       id: '/(auth)/two-factor/'
       path: '/two-factor'
@@ -601,6 +620,7 @@ const dashboardSettingsLayoutRouteWithChildren =
 
 interface dashboardLayoutRouteChildren {
   dashboardSettingsLayoutRoute: typeof dashboardSettingsLayoutRouteWithChildren
+  dashboardChatIndexRoute: typeof dashboardChatIndexRoute
   dashboardOrganizationsIndexRoute: typeof dashboardOrganizationsIndexRoute
   dashboardOverviewIndexRoute: typeof dashboardOverviewIndexRoute
   dashboardOrganizationsInvitationsIndexRoute: typeof dashboardOrganizationsInvitationsIndexRoute
@@ -608,6 +628,7 @@ interface dashboardLayoutRouteChildren {
 
 const dashboardLayoutRouteChildren: dashboardLayoutRouteChildren = {
   dashboardSettingsLayoutRoute: dashboardSettingsLayoutRouteWithChildren,
+  dashboardChatIndexRoute: dashboardChatIndexRoute,
   dashboardOrganizationsIndexRoute: dashboardOrganizationsIndexRoute,
   dashboardOverviewIndexRoute: dashboardOverviewIndexRoute,
   dashboardOrganizationsInvitationsIndexRoute:

@@ -1,9 +1,9 @@
 "use client";
 
-import { Controls as ControlsPrimitive } from "@xyflow/react";
 import type { ComponentProps } from "react";
 
 import { cn } from "@/lib/utils";
+import { Controls as ControlsPrimitive } from "@xyflow/react";
 
 export type ControlsProps = ComponentProps<typeof ControlsPrimitive>;
 

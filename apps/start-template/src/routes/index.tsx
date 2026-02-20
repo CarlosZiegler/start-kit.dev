@@ -41,43 +41,35 @@ const AI_CODE_TABS = [
     value: "backend",
     label: "Backend",
     language: "ts",
-    code: `import { chat, toServerSentEventsStream } from "@tanstack/ai";
-import { createAnthropicChat } from "@tanstack/ai-anthropic";
-import { createGeminiChat } from "@tanstack/ai-gemini";
-import { createOpenaiChat } from "@tanstack/ai-openai";
+    code: `import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { createFileRoute } from "@tanstack/react-router";
 
 type Provider = "openai" | "anthropic" | "gemini";
 
-const adapters = {
-  openai: (model = "gpt-5-mini") =>
-    createOpenaiChat(model as Parameters<typeof createOpenaiChat>[0], process.env.OPENAI_API_KEY!),
-  anthropic: (model = "claude-3-5-haiku-latest") =>
-    createAnthropicChat(model as Parameters<typeof createAnthropicChat>[0], process.env.ANTHROPIC_API_KEY!),
-  gemini: (model = "gemini-2.0-flash") =>
-    createGeminiChat(model as Parameters<typeof createGeminiChat>[0], process.env.GOOGLE_GENERATIVE_AI_API_KEY!),
-};
+function getModel(provider: Provider, modelId: string) {
+  switch (provider) {
+    case "anthropic": return anthropic(modelId);
+    case "gemini": return google(modelId);
+    default: return openai(modelId);
+  }
+}
 
 export const Route = createFileRoute("/api/chat/")({
   server: {
     handlers: {
-      POST: async ({ request }: { request: Request }) => {
-        const { messages, conversationId, provider = "openai", model } = await request.json() as {
-          messages: unknown[];
-          conversationId?: string;
-          provider?: Provider;
-          model?: string;
-        };
+      POST: async ({ request }) => {
+        const { messages, provider = "openai", model = "gpt-5-mini" } =
+          await request.json() as { messages: UIMessage[]; provider?: Provider; model?: string };
 
-        const stream = chat({
-          adapter: adapters[provider](model),
-          messages: messages as any,
-          conversationId,
+        const result = streamText({
+          model: getModel(provider, model),
+          messages: await convertToModelMessages(messages),
         });
 
-        return new Response(toServerSentEventsStream(stream, new AbortController()), {
-          headers: { "Content-Type": "text/event-stream" },
-        });
+        return result.toUIMessageStreamResponse();
       },
     },
   },
@@ -87,27 +79,33 @@ export const Route = createFileRoute("/api/chat/")({
     value: "frontend",
     label: "Frontend",
     language: "ts",
-    code: `import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
+    code: `import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 
 export function ChatPage() {
-  const { messages, sendMessage, isLoading } = useChat({
-    connection: fetchServerSentEvents("/api/chat"),
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: { provider: "openai", model: "gpt-5-mini" },
+    }),
   });
 
   return (
     <div>
       <button
-        disabled={isLoading}
+        disabled={status !== "ready"}
         type="button"
-        onClick={() =>
-          sendMessage("Hello!", {
-            data: { provider: "anthropic", model: "claude-3-5-haiku-latest" },
-          })
-        }
+        onClick={() => sendMessage({ text: "Hello!" })}
       >
         Send
       </button>
-      <pre>{JSON.stringify(messages, null, 2)}</pre>
+      {messages.map((msg) => (
+        <div key={msg.id}>
+          {msg.parts.map((part, i) =>
+            part.type === "text" ? <p key={i}>{part.text}</p> : null
+          )}
+        </div>
+      ))}
     </div>
   );
 }`,
