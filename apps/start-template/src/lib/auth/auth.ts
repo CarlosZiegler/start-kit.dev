@@ -293,12 +293,12 @@ const getAuthConfig = createServerOnlyFn(() =>
       modelName: "rateLimit",
     },
     // https://www.better-auth.com/docs/concepts/session-management#session-caching
-    // session: {
-    //   cookieCache: {
-    //     enabled: true,
-    //     maxAge: 5 * 60, // 5 minutes
-    //   },
-    // },
+    session: {
+      cookieCache: {
+        enabled: true,
+        maxAge: 5 * 60, // 5 minutes
+      },
+    },
     user: {
       deleteUser: {
         enabled: true,
