@@ -31,12 +31,13 @@ export type ThemeSwitcherProps = {
 
 export const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
   const theme = useTheme();
+  const { setTheme } = theme;
 
   const handleThemeClick = useCallback(
     (themeKey: "light" | "dark" | "system") => {
-      theme.setTheme(themeKey);
+      setTheme(themeKey);
     },
-    [theme]
+    [setTheme]
   );
 
   return (
