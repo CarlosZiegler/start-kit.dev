@@ -136,13 +136,9 @@ const chartConfig = {
 
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = React.useState("30d");
-
-  React.useEffect(() => {
-    if (isMobile) {
-      setTimeRange("7d");
-    }
-  }, [isMobile]);
+  const [timeRange, setTimeRange] = React.useState(() =>
+    isMobile ? "7d" : "30d"
+  );
 
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date);
