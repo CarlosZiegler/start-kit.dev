@@ -86,9 +86,10 @@ export const storageRouter = orpc.router({
         throw new Error("Unauthorized to delete this file");
       }
 
-      await storage.delete(fileRecord.key);
-
-      await context.db.delete(file).where(eq(file.id, input.fileId));
+      await Promise.all([
+        storage.delete(fileRecord.key),
+        context.db.delete(file).where(eq(file.id, input.fileId)),
+      ]);
 
       return { success: true };
     }),

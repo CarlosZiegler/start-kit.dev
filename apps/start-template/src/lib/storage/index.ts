@@ -37,7 +37,6 @@ async function upload(
   const s3File = s3.file(key);
   await retryWithBackoff(async () => {
     const result = await s3File.write(data, { type: options?.contentType });
-    console.info("[S3] Upload successful:", key);
     return result;
   });
   return { key, size: data.length, contentType: options?.contentType };

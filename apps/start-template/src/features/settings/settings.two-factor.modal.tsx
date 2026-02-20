@@ -144,7 +144,6 @@ export function TwoFactorAuthModal({
         { password: value.password },
         {
           onSuccess: () => {
-            console.log("disableTwoFactor success");
             toast.success(t("SETTINGS_SECURITY_2FA_DISABLED"));
             onOpenChange(false);
             passwordForm.reset();

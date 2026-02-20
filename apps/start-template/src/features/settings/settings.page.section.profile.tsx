@@ -66,11 +66,9 @@ export function ProfileSection() {
   const uploadAvatar = useMutation(
     orpc.profile.uploadAvatar.mutationOptions({
       onSuccess: async () => {
-        // Invalidate and refetch avatar query
         await queryClient.invalidateQueries({
           queryKey: ["profile", "getAvatarUrl"],
         });
-        await avatarQuery.refetch();
         refetchSession();
       },
     })

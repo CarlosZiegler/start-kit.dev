@@ -10,18 +10,19 @@ export const Route = createFileRoute("/api/chat/")({
     handlers: {
       POST: async ({ request }: { request: Request }) => {
         try {
-          const session = await auth.api.getSession({
-            headers: request.headers,
-          });
+          const [session, body, streamContext] = await Promise.all([
+            auth.api.getSession({ headers: request.headers }),
+            request.json() as Promise<{ messages: unknown[]; conversationId?: string }>,
+            getStreamContext(),
+          ]);
+
           if (!session?.user) {
             return new Response("Unauthorized", { status: 401 });
           }
 
-          const { messages, conversationId } = await request.json();
+          const { messages, conversationId } = body;
           const abortController = new AbortController();
           const streamId = crypto.randomUUID();
-
-          const streamContext = await getStreamContext();
 
           const createBaseStream = () => {
             const baseStream = chat({
