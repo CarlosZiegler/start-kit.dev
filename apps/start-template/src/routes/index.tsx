@@ -42,23 +42,40 @@ const AI_CODE_TABS = [
     label: "Backend",
     language: "ts",
     code: `import { chat, toServerSentEventsStream } from "@tanstack/ai";
-import { openaiText } from "@tanstack/ai-openai";
+import { createAnthropicChat } from "@tanstack/ai-anthropic";
+import { createGeminiChat } from "@tanstack/ai-gemini";
+import { createOpenaiChat } from "@tanstack/ai-openai";
 import { createFileRoute } from "@tanstack/react-router";
+
+type Provider = "openai" | "anthropic" | "gemini";
+
+const adapters = {
+  openai: (model = "gpt-5-mini") =>
+    createOpenaiChat(model as Parameters<typeof createOpenaiChat>[0], process.env.OPENAI_API_KEY!),
+  anthropic: (model = "claude-3-5-haiku-latest") =>
+    createAnthropicChat(model as Parameters<typeof createAnthropicChat>[0], process.env.ANTHROPIC_API_KEY!),
+  gemini: (model = "gemini-2.0-flash") =>
+    createGeminiChat(model as Parameters<typeof createGeminiChat>[0], process.env.GOOGLE_GENERATIVE_AI_API_KEY!),
+};
 
 export const Route = createFileRoute("/api/chat/")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        const { messages, conversationId } = await request.json();
-        const abortController = new AbortController();
+        const { messages, conversationId, provider = "openai", model } = await request.json() as {
+          messages: unknown[];
+          conversationId?: string;
+          provider?: Provider;
+          model?: string;
+        };
 
         const stream = chat({
-          adapter: openaiText("gpt-5-mini"),
-          messages,
+          adapter: adapters[provider](model),
+          messages: messages as any,
           conversationId,
         });
 
-        return new Response(toServerSentEventsStream(stream, abortController), {
+        return new Response(toServerSentEventsStream(stream, new AbortController()), {
           headers: { "Content-Type": "text/event-stream" },
         });
       },
@@ -82,7 +99,11 @@ export function ChatPage() {
       <button
         disabled={isLoading}
         type="button"
-        onClick={() => sendMessage("Hello!")}
+        onClick={() =>
+          sendMessage("Hello!", {
+            data: { provider: "anthropic", model: "claude-3-5-haiku-latest" },
+          })
+        }
       >
         Send
       </button>
@@ -455,7 +476,7 @@ function LandingPage() {
                 className:
                   "h-14 rounded-full border-border/60 px-10 font-medium text-lg transition-all hover:bg-accent/50",
               })}
-              href="https://github.com/CarlosZiegler/start-template"
+              href="https://github.com/CarlosZiegler/start-kit.dev"
               rel="noreferrer"
               target="_blank"
             >
@@ -677,7 +698,7 @@ function LandingPage() {
                 className:
                   "h-16 rounded-full px-10 font-bold text-xl shadow-2xl shadow-primary/30",
               })}
-              href="https://github.com/CarlosZiegler/start-template"
+              href="https://github.com/CarlosZiegler/start-kit.dev"
               rel="noreferrer"
               target="_blank"
             >

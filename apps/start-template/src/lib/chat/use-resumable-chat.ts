@@ -10,16 +10,37 @@ import {
   saveMessages,
 } from "./resumable-connection";
 
-const connection = () =>
+export type ChatProvider = "openai" | "anthropic" | "gemini";
+
+export type ChatRuntimeOptions = {
+  provider: ChatProvider;
+  model: string;
+};
+
+const DEFAULT_CHAT_RUNTIME: ChatRuntimeOptions = {
+  provider: "openai",
+  model: "gpt-5-mini",
+};
+
+const connection = (getRuntime: () => ChatRuntimeOptions) =>
   stream((messages, data) => {
     const conversationId = data?.conversationId ?? crypto.randomUUID();
 
-    // Return async generator directly (not a Promise)
+    const provider =
+      (data?.provider as ChatProvider | undefined) ?? getRuntime().provider;
+    const model = (data?.model as string | undefined) ?? getRuntime().model;
+
     return (async function* () {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages, conversationId, ...data }),
+        body: JSON.stringify({
+          messages,
+          conversationId,
+          ...data,
+          provider,
+          model,
+        }),
       });
 
       if (!response.ok) {
@@ -30,11 +51,21 @@ const connection = () =>
     })();
   });
 
-export function useResumableChat() {
+export function useResumableChat(initialRuntime?: Partial<ChatRuntimeOptions>) {
   const [isResuming, setIsResuming] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const chat = useChat({ connection: connection() });
+  const [runtime, setRuntime] = useState<ChatRuntimeOptions>({
+    ...DEFAULT_CHAT_RUNTIME,
+    ...initialRuntime,
+  });
+
+  const runtimeRef = useRef(runtime);
+  const chat = useChat({ connection: connection(() => runtimeRef.current) });
   const messagesRef = useRef<UIMessage[]>(chat.messages);
+
+  useEffect(() => {
+    runtimeRef.current = runtime;
+  }, [runtime]);
 
   // Sync messages to storage and ref
   useEffect(() => {
@@ -62,11 +93,10 @@ export function useResumableChat() {
 
     (async () => {
       try {
-        for await (const chunk of resumeStream(
-          "/api/chat",
-          controller.signal
-        )) {
-          if (chunk.type === "content" && chunk.delta) {
+        for await (const chunk of resumeStream("/api/chat", controller.signal)) {
+          const normalized = chunk as { type?: string; delta?: string };
+
+          if (normalized.type === "content" && normalized.delta) {
             const current = [...messagesRef.current];
             const last = current.at(-1);
             if (last?.role === "assistant") {
@@ -77,7 +107,7 @@ export function useResumableChat() {
                   {
                     ...last,
                     parts: [
-                      { ...textPart, content: textPart.content + chunk.delta },
+                      { ...textPart, content: textPart.content + normalized.delta },
                     ],
                   },
                 ];
@@ -104,6 +134,11 @@ export function useResumableChat() {
 
   return {
     ...chat,
+    runtime,
+    setRuntime,
+    setProvider: (provider: ChatProvider) =>
+      setRuntime((prev) => ({ ...prev, provider })),
+    setModel: (model: string) => setRuntime((prev) => ({ ...prev, model })),
     isInitialized,
     isResuming,
     isStreaming: chat.isLoading || isResuming,
