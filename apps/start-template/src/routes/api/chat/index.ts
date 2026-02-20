@@ -1,21 +1,24 @@
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
 import {
   convertToModelMessages,
+  generateId,
   streamText,
   type UIMessage,
 } from "ai";
 import { createFileRoute } from "@tanstack/react-router";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 
 import { auth } from "@/lib/auth/auth";
+import { saveChat } from "@/lib/chat/chat-store";
 import { getStreamContext } from "@/lib/chat/stream-context";
 
 type ChatProvider = "openai" | "anthropic" | "gemini";
 
 type ChatRequestBody = {
   id?: string;
-  messages: UIMessage[];
+  message?: UIMessage;
+  messages?: UIMessage[];
   provider?: ChatProvider;
   model?: string;
 };
@@ -58,74 +61,49 @@ export const Route = createFileRoute("/api/chat/")({
             return new Response("Unauthorized", { status: 401 });
           }
 
-          const { messages, id: chatId } = body;
+          const chatId = body.id ?? generateId();
           const provider = normalizeProvider(body.provider);
           const modelId = body.model?.trim() || DEFAULT_MODELS[provider];
           const model = getModel(provider, modelId);
 
-          const streamContext = await getStreamContext();
-          const streamId = chatId ?? crypto.randomUUID();
+          const messages = body.messages ?? [];
 
           const result = streamText({
             model,
             messages: await convertToModelMessages(messages),
           });
 
-          if (streamContext) {
-            const response = result.toUIMessageStreamResponse({
-              sendReasoning: true,
-              sendSources: true,
-            });
+          const streamContext = await getStreamContext();
 
-            // Wrap with resumable stream
-            const resumable = await streamContext.createNewResumableStream(
-              streamId,
-              () => {
-                if (!response.body) {
-                  throw new Error("Response body is null");
-                }
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                return new ReadableStream<string>({
-                  async pull(controller) {
-                    const { done, value } = await reader.read();
-                    if (done) {
-                      controller.close();
-                      return;
-                    }
-                    controller.enqueue(decoder.decode(value, { stream: true }));
-                  },
-                });
-              }
-            );
-
-            if (resumable) {
-              const encoder = new TextEncoder();
-              const responseStream = resumable.pipeThrough(
-                new TransformStream<string, Uint8Array>({
-                  transform(chunk, controller) {
-                    controller.enqueue(encoder.encode(chunk));
-                  },
-                })
-              );
-
-              return new Response(responseStream, {
-                headers: {
-                  "Content-Type": "text/event-stream",
-                  "Cache-Control": "no-cache",
-                  Connection: "keep-alive",
-                  "X-Stream-Id": streamId,
-                  "X-AI-Provider": provider,
-                  "X-AI-Model": modelId,
-                },
-              });
-            }
-          }
-
-          // Fallback: no Redis / no resumable stream context
           return result.toUIMessageStreamResponse({
             sendReasoning: true,
             sendSources: true,
+            originalMessages: messages,
+            generateMessageId: generateId,
+            onFinish: async ({ messages: finalMessages }) => {
+              await saveChat({
+                id: chatId,
+                userId: session.user.id,
+                messages: finalMessages,
+                activeStreamId: null,
+              });
+            },
+            ...(streamContext
+              ? {
+                  consumeSseStream: async ({ stream }) => {
+                    const streamId = generateId();
+                    await streamContext.createNewResumableStream(
+                      streamId,
+                      () => stream
+                    );
+                    await saveChat({
+                      id: chatId,
+                      userId: session.user.id,
+                      activeStreamId: streamId,
+                    });
+                  },
+                }
+              : {}),
           });
         } catch (error: unknown) {
           console.error(error);

@@ -2,6 +2,7 @@ import type { RouterClient } from "@orpc/server";
 
 import { orpc } from "./orpc-server";
 
+import { chatRouter } from "./routes/chat";
 import { dashboardRouter } from "./routes/dashboard";
 import { organizationRouter } from "./routes/organization";
 import { profileRouter } from "./routes/profile";
@@ -12,6 +13,7 @@ export const router = orpc.router({
   organization: organizationRouter,
   dashboard: dashboardRouter,
   storage: storageRouter,
+  chat: chatRouter,
 });
 
 export type AppRouter = typeof router;

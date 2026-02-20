@@ -189,11 +189,16 @@ function RouteComponent() {
   const [useWebSearch, setUseWebSearch] = useState(false);
 
   const { messages, sendMessage, status, stop } = useChat({
+    id: "chat-main",
+    resume: true,
     transport: new DefaultChatTransport({
       api: "/api/chat",
       body: () => ({
         provider: selectedModel.provider,
         model: selectedModel.model,
+      }),
+      prepareReconnectToStreamRequest: ({ id }) => ({
+        api: `/api/chat/resume?chatId=${id}`,
       }),
     }),
   });

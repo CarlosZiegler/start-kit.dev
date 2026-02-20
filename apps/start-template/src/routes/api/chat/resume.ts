@@ -1,5 +1,7 @@
+import { UI_MESSAGE_STREAM_HEADERS } from "ai";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { readChat } from "@/lib/chat/chat-store";
 import { getStreamContext } from "@/lib/chat/stream-context";
 
 export const Route = createFileRoute("/api/chat/resume")({
@@ -7,13 +9,18 @@ export const Route = createFileRoute("/api/chat/resume")({
     handlers: {
       GET: async ({ request }: { request: Request }) => {
         const url = new URL(request.url);
-        const streamId = url.searchParams.get("streamId");
+        const chatId = url.searchParams.get("chatId");
 
-        if (!streamId) {
-          return new Response(JSON.stringify({ error: "Missing streamId" }), {
+        if (!chatId) {
+          return new Response(JSON.stringify({ error: "Missing chatId" }), {
             status: 400,
             headers: { "Content-Type": "application/json" },
           });
+        }
+
+        const chatData = await readChat(chatId);
+        if (!chatData?.activeStreamId) {
+          return new Response(null, { status: 204 });
         }
 
         const streamContext = await getStreamContext();
@@ -21,42 +28,16 @@ export const Route = createFileRoute("/api/chat/resume")({
           return new Response(null, { status: 204 });
         }
 
-        const streamStatus = await streamContext.hasExistingStream(streamId);
-        if (streamStatus === null || streamStatus === "DONE") {
-          return new Response(null, { status: 204 });
-        }
-
-        const skipChars = Number.parseInt(
-          url.searchParams.get("skipChars") ?? "0",
-          10
-        );
-
         const resumedStream = await streamContext.resumeExistingStream(
-          streamId,
-          skipChars
+          chatData.activeStreamId
         );
 
         if (!resumedStream) {
           return new Response(null, { status: 204 });
         }
 
-        // Convert string stream to Uint8Array for Response
-        const encoder = new TextEncoder();
-        const responseStream = resumedStream.pipeThrough(
-          new TransformStream<string, Uint8Array>({
-            transform(chunk, controller) {
-              controller.enqueue(encoder.encode(chunk));
-            },
-          })
-        );
-
-        return new Response(responseStream, {
-          headers: {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            Connection: "keep-alive",
-            "X-Stream-Id": streamId,
-          },
+        return new Response(resumedStream, {
+          headers: UI_MESSAGE_STREAM_HEADERS,
         });
       },
     },
