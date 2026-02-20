@@ -47,19 +47,19 @@ export const profileRouter = orpc.router({
         throw new Error("Unauthorized");
       }
 
-      // Delete old avatar records from DB (keep files in S3 for potential recovery)
-      await context.db
-        .delete(file)
-        .where(
-          and(eq(file.userId, session.user.id), eq(file.purpose, "avatar"))
-        );
-
-      // Upload new avatar
-      const result = await storage.uploadFile(input.file, {
-        userId: session.user.id,
-        purpose: "avatar",
-        fileName: input.file.name,
-      });
+      // Delete old avatar records from DB and upload new avatar in parallel
+      const [, result] = await Promise.all([
+        context.db
+          .delete(file)
+          .where(
+            and(eq(file.userId, session.user.id), eq(file.purpose, "avatar"))
+          ),
+        storage.uploadFile(input.file, {
+          userId: session.user.id,
+          purpose: "avatar",
+          fileName: input.file.name,
+        }),
+      ]);
 
       const [fileRecord] = await context.db
         .insert(file)
@@ -80,17 +80,18 @@ export const profileRouter = orpc.router({
         })
         .returning();
 
-      // Use presigned S3 URL
-      const url = await storage.getUrl(result.key);
-
-      const [updatedUser] = await context.db
-        .update(user)
-        .set({
-          image: fileRecord.id,
-          updatedAt: new Date(),
-        })
-        .where(eq(user.id, session.user.id))
-        .returning();
+      // Get presigned URL and update user in parallel
+      const [url, [updatedUser]] = await Promise.all([
+        storage.getUrl(result.key),
+        context.db
+          .update(user)
+          .set({
+            image: fileRecord.id,
+            updatedAt: new Date(),
+          })
+          .where(eq(user.id, session.user.id))
+          .returning(),
+      ]);
 
       return {
         success: true,
@@ -114,8 +115,10 @@ export const profileRouter = orpc.router({
       .limit(1);
 
     if (avatarFile) {
-      await storage.delete(avatarFile.key);
-      await context.db.delete(file).where(eq(file.id, avatarFile.id));
+      await Promise.all([
+        storage.delete(avatarFile.key),
+        context.db.delete(file).where(eq(file.id, avatarFile.id)),
+      ]);
     }
 
     await context.db
