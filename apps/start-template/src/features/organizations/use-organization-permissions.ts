@@ -23,7 +23,6 @@ export function useOrganizationPermissions(organizationId?: string) {
       });
 
       if (error) {
-        console.error("Failed to fetch active member:", error);
         return null;
       }
       return data;

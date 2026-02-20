@@ -32,29 +32,14 @@ export const Route = createFileRoute("/api/storage/$")({
             .where(eq(file.key, key))
             .limit(1);
 
-          console.log(
-            "[Storage Route] Found metadata:",
-            metadata?.key ?? "NOT FOUND"
-          );
-
           if (!metadata) {
             return new Response("File not found", { status: 404 });
           }
 
-          console.log("[Storage Route] Downloading from S3...");
           const fileData = await storage.download(key);
-          console.log(
-            "[Storage Route] Download successful, size:",
-            fileData.size
-          );
 
           // Create a proper copy of the data to avoid buffer view issues
           const dataArray = new Uint8Array(fileData.data);
-
-          console.log(
-            "[Storage Route] Sending response, data length:",
-            dataArray.length
-          );
 
           return new Response(dataArray, {
             status: 200,
