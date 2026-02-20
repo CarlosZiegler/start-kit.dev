@@ -1,6 +1,9 @@
 /** biome-ignore-all lint/suspicious/useAwait: <explanation> */
 import { passkey } from "@better-auth/passkey";
 import { stripe } from "@better-auth/stripe";
+import pino from "pino";
+
+const log = pino({ level: "info" });
 import { createServerOnlyFn } from "@tanstack/react-start";
 import {
   type AuthContext,
@@ -71,41 +74,21 @@ function createStripePlugin() {
     stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
     createCustomerOnSignUp: true,
     onEvent: async (event) => {
-      console.log("[Stripe Webhook] Received event:", {
-        type: event.type,
-        id: event.id,
-        created: new Date(event.created * 1000).toISOString(),
-      });
+      log.info({ type: event.type, id: event.id, created: new Date(event.created * 1000).toISOString() }, "Stripe webhook event received");
 
       if (event.type === "checkout.session.completed") {
         const session = event.data.object;
-        console.log("[Stripe Webhook] Checkout session metadata:", {
-          sessionId: session.id,
-          customerId: session.customer,
-          subscriptionId: session.subscription,
-          metadata: session.metadata,
-        });
+        log.info({ sessionId: session.id, customerId: session.customer, subscriptionId: session.subscription, metadata: session.metadata }, "Stripe checkout session completed");
       }
 
       if (event.type === "customer.subscription.updated") {
         const sub = event.data.object;
-        console.log("[Stripe Webhook] Subscription updated:", {
-          subscriptionId: sub.id,
-          status: sub.status,
-          cancelAtPeriodEnd: sub.cancel_at_period_end,
-          cancelAt: sub.cancel_at,
-          canceledAt: sub.canceled_at,
-          currentPeriodEnd: sub.cancel_at_period_end,
-        });
+        log.info({ subscriptionId: sub.id, status: sub.status, cancelAtPeriodEnd: sub.cancel_at_period_end, cancelAt: sub.cancel_at, canceledAt: sub.canceled_at }, "Stripe subscription updated");
       }
 
       if (event.type === "customer.subscription.deleted") {
         const sub = event.data.object;
-        console.log("[Stripe Webhook] Subscription deleted:", {
-          subscriptionId: sub.id,
-          status: sub.status,
-          cancelAtPeriodEnd: sub.cancel_at_period_end,
-        });
+        log.info({ subscriptionId: sub.id, status: sub.status, cancelAtPeriodEnd: sub.cancel_at_period_end }, "Stripe subscription deleted");
       }
     },
     subscription: {
@@ -156,11 +139,7 @@ function createStripePlugin() {
         plan,
         stripeSubscription,
       }) => {
-        console.info("[Stripe] Subscription created:", {
-          subscriptionId: subscription.id,
-          plan: plan?.name,
-          status: stripeSubscription.status,
-        });
+        log.info({ subscriptionId: subscription.id, plan: plan?.name, status: stripeSubscription.status }, "Stripe subscription complete");
 
         const user = await db.query.user.findFirst({
           where: eq(schema.user.id, subscription.referenceId),
@@ -188,11 +167,7 @@ function createStripePlugin() {
         }
       },
       onSubscriptionUpdate: async ({ subscription }) => {
-        console.info("[Stripe] Subscription updated:", {
-          subscriptionId: subscription.id,
-          plan: subscription.plan,
-          status: subscription.status,
-        });
+        log.info({ subscriptionId: subscription.id, plan: subscription.plan, status: subscription.status }, "Stripe subscription updated");
 
         const user = await db.query.user.findFirst({
           where: eq(schema.user.id, subscription.referenceId),
@@ -221,12 +196,7 @@ function createStripePlugin() {
         stripeSubscription,
         cancellationDetails,
       }) => {
-        console.info("[Stripe] Subscription canceled:", {
-          subscriptionId: subscription.id,
-          reason: cancellationDetails?.reason,
-          cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
-          cancelAt: stripeSubscription.cancel_at,
-        });
+        log.info({ subscriptionId: subscription.id, reason: cancellationDetails?.reason, cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end, cancelAt: stripeSubscription.cancel_at }, "Stripe subscription canceled");
 
         const user = await db.query.user.findFirst({
           where: eq(schema.user.id, subscription.referenceId),
@@ -250,22 +220,14 @@ function createStripePlugin() {
         }
       },
       onSubscriptionDeleted: async ({ subscription, stripeSubscription }) => {
-        console.info("[Stripe] Subscription deleted:", {
-          subscriptionId: subscription.id,
-          stripeSubscriptionId: stripeSubscription.id,
-          status: stripeSubscription.status,
-        });
+        log.info({ subscriptionId: subscription.id, stripeSubscriptionId: stripeSubscription.id, status: stripeSubscription.status }, "Stripe subscription deleted");
       },
       onSubscriptionCreated: async ({
         subscription,
         stripeSubscription,
         plan,
       }) => {
-        console.info("[Stripe] Subscription created:", {
-          subscriptionId: subscription.id,
-          stripeSubscriptionId: stripeSubscription.id,
-          plan: plan?.name,
-        });
+        log.info({ subscriptionId: subscription.id, stripeSubscriptionId: stripeSubscription.id, plan: plan?.name }, "Stripe subscription created");
       },
     },
   });
