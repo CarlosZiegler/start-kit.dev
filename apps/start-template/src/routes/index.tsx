@@ -36,6 +36,247 @@ import { TECH_STACK } from "@/features/landing/tech-stack.data";
 import { TechStackMarquee } from "@/features/landing/tech-stack-marquee";
 import { DEFAULT_SITE_NAME, SITE_URL, seo } from "@/utils/seo";
 
+const AI_CODE_TABS = [
+  {
+    value: "backend",
+    label: "Backend",
+    language: "ts",
+    code: `import { chat, toServerSentEventsStream } from "@tanstack/ai";
+import { openaiText } from "@tanstack/ai-openai";
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/api/chat/")({
+  server: {
+    handlers: {
+      POST: async ({ request }: { request: Request }) => {
+        const { messages, conversationId } = await request.json();
+        const abortController = new AbortController();
+
+        const stream = chat({
+          adapter: openaiText("gpt-5-mini"),
+          messages,
+          conversationId,
+        });
+
+        return new Response(toServerSentEventsStream(stream, abortController), {
+          headers: { "Content-Type": "text/event-stream" },
+        });
+      },
+    },
+  },
+});`,
+  },
+  {
+    value: "frontend",
+    label: "Frontend",
+    language: "ts",
+    code: `import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
+
+export function ChatPage() {
+  const { messages, sendMessage, isLoading } = useChat({
+    connection: fetchServerSentEvents("/api/chat"),
+  });
+
+  return (
+    <div>
+      <button
+        disabled={isLoading}
+        type="button"
+        onClick={() => sendMessage("Hello!")}
+      >
+        Send
+      </button>
+      <pre>{JSON.stringify(messages, null, 2)}</pre>
+    </div>
+  );
+}`,
+  },
+] as const;
+
+const AUTH_CODE_TABS = [
+  {
+    value: "server",
+    label: "Server",
+    language: "ts",
+    code: `import { createMiddleware, createServerFn } from "@tanstack/react-start";
+import { auth } from "@/lib/auth/auth";
+
+export const authMiddleware = createMiddleware().server(
+  async ({ next, request }) => {
+    const session = await auth.api.getSession({ headers: request.headers });
+    return next({ context: { session } });
+  }
+);
+
+export const getCurrentUserFn = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => context.session);`,
+  },
+  {
+    value: "client",
+    label: "Client",
+    language: "ts",
+    code: `import { authClient } from "@/lib/auth/auth-client";
+
+export function SessionBadge() {
+  const { data: session } = authClient.useSession();
+  if (!session?.user) return <span>Signed out</span>;
+  return <span>Signed in as {session.user.email}</span>;
+}`,
+  },
+] as const;
+
+const ORPC_CODE_TABS = [
+  {
+    value: "server",
+    label: "Server",
+    language: "ts",
+    code: `import { ORPCError, os } from "@orpc/server";
+import { auth } from "@/lib/auth/auth";
+import { db } from "@/lib/db";
+
+export const createORPCContext = async ({ headers }: { headers: Headers }) => {
+  const session = await auth.api.getSession({ headers });
+  return { db, session };
+};
+
+export const orpc = os.$context<Awaited<ReturnType<typeof createORPCContext>>>();
+
+export const protectedProcedure = orpc.middleware(async ({ context, next }) => {
+  if (!context.session?.user) throw new ORPCError("UNAUTHORIZED");
+  return await next();
+});`,
+  },
+  {
+    value: "client",
+    label: "Client",
+    language: "ts",
+    code: `import { createORPCClient } from "@orpc/client";
+import { RPCLink } from "@orpc/client/fetch";
+import { createTanstackQueryUtils } from "@orpc/tanstack-query";
+
+const link = new RPCLink({
+  url: "/api/rpc",
+  fetch(url, options) {
+    return fetch(url, { ...options, credentials: "include" });
+  },
+});
+
+export const orpc = createTanstackQueryUtils(createORPCClient(link));`,
+  },
+] as const;
+
+const STORAGE_CODE_TABS = [
+  {
+    value: "bun-s3",
+    label: "Bun S3Client",
+    language: "ts",
+    code: `import { S3Client } from "bun";
+import { env } from "@/lib/env.server";
+
+const s3 = new S3Client({
+  accessKeyId: env.S3_ACCESS_KEY_ID,
+  secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+  bucket: env.S3_BUCKET?.toLowerCase(),
+  region: env.S3_REGION,
+  endpoint: env.S3_ENDPOINT,
+});
+
+export const storage = {
+  async upload(key: string, data: Uint8Array, contentType?: string) {
+    await s3.file(key).write(data, { type: contentType });
+    return { key, size: data.length, contentType };
+  },
+};`,
+  },
+  {
+    value: "presign",
+    label: "Presign",
+    language: "ts",
+    code: `import { S3Client } from "bun";
+
+const s3 = new S3Client({ /* env config */ });
+
+export const getUrl = (key: string, expiresIn = 86_400) =>
+  s3.file(key).presign({ expiresIn });
+
+export const presignUpload = (key: string, expiresIn = 3_600) =>
+  s3.file(key).presign({ expiresIn, method: "PUT" });`,
+  },
+] as const;
+
+const DB_CODE_TABS = [
+  {
+    value: "drizzle",
+    label: "Drizzle",
+    language: "ts",
+    code: `import { relations } from "drizzle-orm";
+import { bigint, index, json, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+
+export const file = pgTable(
+  "file",
+  {
+    id: text("id").primaryKey(),
+    key: text("key").notNull().unique(),
+    provider: text("provider").notNull(),
+    size: bigint("size", { mode: "number" }).notNull(),
+    mimeType: text("mime_type").notNull(),
+    fileName: text("file_name").notNull(),
+    metadata: json("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("file_key_idx").on(table.key)]
+);
+
+export const fileRelations = relations(file, ({ one }) => ({
+  user: one(/* ... */),
+}));`,
+  },
+] as const;
+
+const REACT_QUERY_CODE_TABS = [
+  {
+    value: "query-options",
+    label: "queryOptions",
+    language: "ts",
+    code: `import { queryOptions } from "@tanstack/react-query";
+
+export const repoStarsOptions = queryOptions({
+  queryKey: ["repo", "tanstack-query"],
+  queryFn: async () => {
+    const res = await fetch("https://api.github.com/repos/tanstack/query");
+    if (!res.ok) throw new Error("Request failed");
+    return await res.json() as { stargazers_count: number };
+  },
+  staleTime: 60_000,
+});`,
+  },
+  {
+    value: "use-query",
+    label: "useQuery",
+    language: "ts",
+    code: `import { useQuery } from "@tanstack/react-query";
+
+type Repo = { stargazers_count: number };
+
+async function fetchRepo(): Promise<Repo> {
+  const res = await fetch("https://api.github.com/repos/tanstack/query");
+  if (!res.ok) throw new Error("Request failed");
+  return await res.json();
+}
+
+export function RepoStars() {
+  const repoQuery = useQuery({
+    queryKey: ["repo", "tanstack-query"],
+    queryFn: fetchRepo,
+    staleTime: 60_000,
+  });
+
+  return <div>⭐ {repoQuery.data?.stargazers_count ?? "—"}</div>;
+}`,
+  },
+] as const;
+
 export const Route = createFileRoute("/")({
   head: () => {
     const title = `${DEFAULT_SITE_NAME} - The Ultimate Boilerplate`;
@@ -244,64 +485,7 @@ function LandingPage() {
             description={t("TEMPLATE_SPOTLIGHT_AI_DESC")}
             title={t("TEMPLATE_SPOTLIGHT_AI_TITLE")}
             visual={
-              <LandingSpotlightCodeTabs
-                tabs={[
-                  {
-                    value: "backend",
-                    label: "Backend",
-                    language: "ts",
-                    code: `import { chat, toServerSentEventsStream } from "@tanstack/ai";
-import { openaiText } from "@tanstack/ai-openai";
-import { createFileRoute } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/api/chat/")({
-  server: {
-    handlers: {
-      POST: async ({ request }: { request: Request }) => {
-        const { messages, conversationId } = await request.json();
-        const abortController = new AbortController();
-
-        const stream = chat({
-          adapter: openaiText("gpt-5-mini"),
-          messages,
-          conversationId,
-        });
-
-        return new Response(toServerSentEventsStream(stream, abortController), {
-          headers: { "Content-Type": "text/event-stream" },
-        });
-      },
-    },
-  },
-});`,
-                  },
-                  {
-                    value: "frontend",
-                    label: "Frontend",
-                    language: "ts",
-                    code: `import { fetchServerSentEvents, useChat } from "@tanstack/ai-react";
-
-export function ChatPage() {
-  const { messages, sendMessage, isLoading } = useChat({
-    connection: fetchServerSentEvents("/api/chat"),
-  });
-
-  return (
-    <div>
-      <button
-        disabled={isLoading}
-        type="button"
-        onClick={() => sendMessage("Hello!")}
-      >
-        Send
-      </button>
-      <pre>{JSON.stringify(messages, null, 2)}</pre>
-    </div>
-  );
-}`,
-                  },
-                ]}
-              />
+              <LandingSpotlightCodeTabs tabs={AI_CODE_TABS} />
             }
           />
 
@@ -310,40 +494,7 @@ export function ChatPage() {
             reverse
             title={t("TEMPLATE_SPOTLIGHT_AUTH_TITLE")}
             visual={
-              <LandingSpotlightCodeTabs
-                tabs={[
-                  {
-                    value: "server",
-                    label: "Server",
-                    language: "ts",
-                    code: `import { createMiddleware, createServerFn } from "@tanstack/react-start";
-import { auth } from "@/lib/auth/auth";
-
-export const authMiddleware = createMiddleware().server(
-  async ({ next, request }) => {
-    const session = await auth.api.getSession({ headers: request.headers });
-    return next({ context: { session } });
-  }
-);
-
-export const getCurrentUserFn = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }) => context.session);`,
-                  },
-                  {
-                    value: "client",
-                    label: "Client",
-                    language: "ts",
-                    code: `import { authClient } from "@/lib/auth/auth-client";
-
-export function SessionBadge() {
-  const { data: session } = authClient.useSession();
-  if (!session?.user) return <span>Signed out</span>;
-  return <span>Signed in as {session.user.email}</span>;
-}`,
-                  },
-                ]}
-              />
+              <LandingSpotlightCodeTabs tabs={AUTH_CODE_TABS} />
             }
           />
 
@@ -351,47 +502,7 @@ export function SessionBadge() {
             description={t("TEMPLATE_SPOTLIGHT_ORPC_DESC")}
             title={t("TEMPLATE_SPOTLIGHT_ORPC_TITLE")}
             visual={
-              <LandingSpotlightCodeTabs
-                tabs={[
-                  {
-                    value: "server",
-                    label: "Server",
-                    language: "ts",
-                    code: `import { ORPCError, os } from "@orpc/server";
-import { auth } from "@/lib/auth/auth";
-import { db } from "@/lib/db";
-
-export const createORPCContext = async ({ headers }: { headers: Headers }) => {
-  const session = await auth.api.getSession({ headers });
-  return { db, session };
-};
-
-export const orpc = os.$context<Awaited<ReturnType<typeof createORPCContext>>>();
-
-export const protectedProcedure = orpc.middleware(async ({ context, next }) => {
-  if (!context.session?.user) throw new ORPCError("UNAUTHORIZED");
-  return await next();
-});`,
-                  },
-                  {
-                    value: "client",
-                    label: "Client",
-                    language: "ts",
-                    code: `import { createORPCClient } from "@orpc/client";
-import { RPCLink } from "@orpc/client/fetch";
-import { createTanstackQueryUtils } from "@orpc/tanstack-query";
-
-const link = new RPCLink({
-  url: "/api/rpc",
-  fetch(url, options) {
-    return fetch(url, { ...options, credentials: "include" });
-  },
-});
-
-export const orpc = createTanstackQueryUtils(createORPCClient(link));`,
-                  },
-                ]}
-              />
+              <LandingSpotlightCodeTabs tabs={ORPC_CODE_TABS} />
             }
           />
 
@@ -400,46 +511,7 @@ export const orpc = createTanstackQueryUtils(createORPCClient(link));`,
             reverse
             title={t("TEMPLATE_SPOTLIGHT_STORAGE_TITLE")}
             visual={
-              <LandingSpotlightCodeTabs
-                tabs={[
-                  {
-                    value: "bun-s3",
-                    label: "Bun S3Client",
-                    language: "ts",
-                    code: `import { S3Client } from "bun";
-import { env } from "@/lib/env.server";
-
-const s3 = new S3Client({
-  accessKeyId: env.S3_ACCESS_KEY_ID,
-  secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-  bucket: env.S3_BUCKET?.toLowerCase(),
-  region: env.S3_REGION,
-  endpoint: env.S3_ENDPOINT,
-});
-
-export const storage = {
-  async upload(key: string, data: Uint8Array, contentType?: string) {
-    await s3.file(key).write(data, { type: contentType });
-    return { key, size: data.length, contentType };
-  },
-};`,
-                  },
-                  {
-                    value: "presign",
-                    label: "Presign",
-                    language: "ts",
-                    code: `import { S3Client } from "bun";
-
-const s3 = new S3Client({ /* env config */ });
-
-export const getUrl = (key: string, expiresIn = 86_400) =>
-  s3.file(key).presign({ expiresIn });
-
-export const presignUpload = (key: string, expiresIn = 3_600) =>
-  s3.file(key).presign({ expiresIn, method: "PUT" });`,
-                  },
-                ]}
-              />
+              <LandingSpotlightCodeTabs tabs={STORAGE_CODE_TABS} />
             }
           />
 
@@ -447,36 +519,7 @@ export const presignUpload = (key: string, expiresIn = 3_600) =>
             description={t("TEMPLATE_SPOTLIGHT_DB_DESC")}
             title={t("TEMPLATE_SPOTLIGHT_DB_TITLE")}
             visual={
-              <LandingSpotlightCodeTabs
-                tabs={[
-                  {
-                    value: "drizzle",
-                    label: "Drizzle",
-                    language: "ts",
-                    code: `import { relations } from "drizzle-orm";
-import { bigint, index, json, pgTable, text, timestamp } from "drizzle-orm/pg-core";
-
-export const file = pgTable(
-  "file",
-  {
-    id: text("id").primaryKey(),
-    key: text("key").notNull().unique(),
-    provider: text("provider").notNull(),
-    size: bigint("size", { mode: "number" }).notNull(),
-    mimeType: text("mime_type").notNull(),
-    fileName: text("file_name").notNull(),
-    metadata: json("metadata").$type<Record<string, unknown>>(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [index("file_key_idx").on(table.key)]
-);
-
-export const fileRelations = relations(file, ({ one }) => ({
-  user: one(/* ... */),
-}));`,
-                  },
-                ]}
-              />
+              <LandingSpotlightCodeTabs tabs={DB_CODE_TABS} />
             }
           />
 
@@ -485,50 +528,7 @@ export const fileRelations = relations(file, ({ one }) => ({
             reverse
             title={t("TEMPLATE_SPOTLIGHT_REACT_QUERY_TITLE")}
             visual={
-              <LandingSpotlightCodeTabs
-                tabs={[
-                  {
-                    value: "query-options",
-                    label: "queryOptions",
-                    language: "ts",
-                    code: `import { queryOptions } from "@tanstack/react-query";
-
-export const repoStarsOptions = queryOptions({
-  queryKey: ["repo", "tanstack-query"],
-  queryFn: async () => {
-    const res = await fetch("https://api.github.com/repos/tanstack/query");
-    if (!res.ok) throw new Error("Request failed");
-    return await res.json() as { stargazers_count: number };
-  },
-  staleTime: 60_000,
-});`,
-                  },
-                  {
-                    value: "use-query",
-                    label: "useQuery",
-                    language: "ts",
-                    code: `import { useQuery } from "@tanstack/react-query";
-
-type Repo = { stargazers_count: number };
-
-async function fetchRepo(): Promise<Repo> {
-  const res = await fetch("https://api.github.com/repos/tanstack/query");
-  if (!res.ok) throw new Error("Request failed");
-  return await res.json();
-}
-
-export function RepoStars() {
-  const repoQuery = useQuery({
-    queryKey: ["repo", "tanstack-query"],
-    queryFn: fetchRepo,
-    staleTime: 60_000,
-  });
-
-  return <div>⭐ {repoQuery.data?.stargazers_count ?? "—"}</div>;
-}`,
-                  },
-                ]}
-              />
+              <LandingSpotlightCodeTabs tabs={REACT_QUERY_CODE_TABS} />
             }
           />
         </div>
