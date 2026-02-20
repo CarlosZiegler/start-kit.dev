@@ -25,9 +25,13 @@ export const createORPCContext = async ({ headers }: { headers: Headers }) => {
 };
 
 const timingMiddleware = os.middleware(async ({ next, path }) => {
+  if (process.env.NODE_ENV === "production") {
+    return next();
+  }
   const start = Date.now();
   const result = await next();
   const end = Date.now();
+  // biome-ignore lint/suspicious/noConsole: dev-only timing log
   console.info(`\t[RPC] /${path.join("/")} executed after ${end - start}ms`);
   return result;
 });
