@@ -1,17 +1,30 @@
 /// <reference types="vite/client" />
 /** biome-ignore-all lint/style/noHeadElement: needed to author <head> content */
 
-import { aiDevtoolsPlugin } from "@tanstack/react-ai-devtools";
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
-import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { lazy } from "react";
 import type * as React from "react";
+
+const TanStackDevtools = import.meta.env.DEV
+  ? lazy(() => import("@tanstack/react-devtools").then((m) => ({ default: m.TanStackDevtools })))
+  : () => null;
+
+const ReactQueryDevtoolsPanel = import.meta.env.DEV
+  ? lazy(() => import("@tanstack/react-query-devtools").then((m) => ({ default: m.ReactQueryDevtoolsPanel })))
+  : () => null;
+
+const TanStackRouterDevtoolsPanel = import.meta.env.DEV
+  ? lazy(() => import("@tanstack/react-router-devtools").then((m) => ({ default: m.TanStackRouterDevtoolsPanel })))
+  : () => null;
+
+const aiDevtoolsPlugin = import.meta.env.DEV
+  ? (await import("@tanstack/react-ai-devtools")).aiDevtoolsPlugin
+  : () => ({ name: "noop", render: null });
 import { I18nextProvider } from "react-i18next";
 import appCss from "@/app.css?url";
 import {
@@ -111,23 +124,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               {children}
               <Toaster />
               <CookieConsentBanner variant="small" />
-              <TanStackDevtools
-                config={{ defaultOpen: false }}
-                eventBusConfig={{
-                  connectToServerBus: true,
-                }}
-                plugins={[
-                  {
-                    name: "Tanstack Query",
-                    render: <ReactQueryDevtoolsPanel />,
-                  },
-                  {
-                    name: "Tanstack Router",
-                    render: <TanStackRouterDevtoolsPanel />,
-                  },
-                  aiDevtoolsPlugin(),
-                ]}
-              />
+              {import.meta.env.DEV && (
+                <TanStackDevtools
+                  config={{ defaultOpen: false }}
+                  eventBusConfig={{ connectToServerBus: true }}
+                  plugins={[
+                    { name: "Tanstack Query", render: <ReactQueryDevtoolsPanel /> },
+                    { name: "Tanstack Router", render: <TanStackRouterDevtoolsPanel /> },
+                    aiDevtoolsPlugin(),
+                  ]}
+                />
+              )}
 
               <Scripts />
               <ConsentAwareAnalytics />
