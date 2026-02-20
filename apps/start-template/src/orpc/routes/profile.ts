@@ -77,7 +77,7 @@ export const profileRouter = orpc.router({
         .returning();
 
       // Get presigned URL and update user in parallel
-      const [url, [updatedUser]] = await Promise.all([
+      const [url] = await Promise.all([
         storage.getUrl(result.key),
         context.db
           .update(user)
@@ -85,15 +85,13 @@ export const profileRouter = orpc.router({
             image: fileRecord.id,
             updatedAt: new Date(),
           })
-          .where(eq(user.id, session.user.id))
-          .returning(),
+          .where(eq(user.id, session.user.id)),
       ]);
 
       return {
         success: true,
         imageId: fileRecord.id,
         imageUrl: url,
-        user: updatedUser,
       };
     }),
 
@@ -147,7 +145,7 @@ export const profileRouter = orpc.router({
 
       // Then get the file metadata by ID
       const [avatarFile] = await context.db
-        .select()
+        .select({ id: file.id, key: file.key })
         .from(file)
         .where(eq(file.id, targetUser.image))
         .limit(1);
