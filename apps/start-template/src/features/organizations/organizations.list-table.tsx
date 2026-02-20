@@ -55,12 +55,10 @@ export function OrganizationsListTable() {
     }
 
     refetch();
-    await queryClient.invalidateQueries({
-      queryKey: ["organization"],
-    });
-    await queryClient.invalidateQueries({
-      queryKey: ["session"],
-    });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["organization"] }),
+      queryClient.invalidateQueries({ queryKey: ["session"] }),
+    ]);
     toast.success(t("ORG_ACTIVE_ACTION", { OrganizationName: data?.name }));
   };
 
