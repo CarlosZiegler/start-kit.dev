@@ -25,7 +25,6 @@ import { Route as ApiChatIndexRouteImport } from './routes/api/chat/index'
 import { Route as dashboardSettingsIndexRouteImport } from './routes/(dashboard)/settings/index'
 import { Route as dashboardOverviewIndexRouteImport } from './routes/(dashboard)/overview/index'
 import { Route as dashboardOrganizationsIndexRouteImport } from './routes/(dashboard)/organizations/index'
-import { Route as dashboardLabIndexRouteImport } from './routes/(dashboard)/lab/index'
 import { Route as authTwoFactorIndexRouteImport } from './routes/(auth)/two-factor/index'
 import { Route as ApiStorageSplatRouteImport } from './routes/api/storage/$'
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
@@ -36,13 +35,7 @@ import { Route as dashboardSettingsBillingRouteImport } from './routes/(dashboar
 import { Route as dashboardSettingsAppearanceRouteImport } from './routes/(dashboard)/settings/appearance'
 import { Route as authTwoFactorOtpRouteImport } from './routes/(auth)/two-factor/otp'
 import { Route as authAcceptInvitationInvitationIdRouteImport } from './routes/(auth)/accept-invitation/$invitationId'
-import { Route as ApiLabBlockGeneratorIndexRouteImport } from './routes/api/lab/block-generator/index'
 import { Route as dashboardOrganizationsInvitationsIndexRouteImport } from './routes/(dashboard)/organizations/invitations/index'
-import { Route as dashboardLabMcpAppsIndexRouteImport } from './routes/(dashboard)/lab/mcp-apps/index'
-import { Route as dashboardLabChatIndexRouteImport } from './routes/(dashboard)/lab/chat/index'
-import { Route as dashboardLabBlockGeneratorIndexRouteImport } from './routes/(dashboard)/lab/block-generator/index'
-import { Route as ApiLabMcpAppsToolCallIndexRouteImport } from './routes/api/lab/mcp-apps/tool-call/index'
-import { Route as ApiLabMcpAppsUiBasicIndexRouteImport } from './routes/api/lab/mcp-apps/ui/basic/index'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -123,11 +116,6 @@ const dashboardOrganizationsIndexRoute =
     path: '/organizations/',
     getParentRoute: () => dashboardLayoutRoute,
   } as any)
-const dashboardLabIndexRoute = dashboardLabIndexRouteImport.update({
-  id: '/lab/',
-  path: '/lab/',
-  getParentRoute: () => dashboardLayoutRoute,
-} as any)
 const authTwoFactorIndexRoute = authTwoFactorIndexRouteImport.update({
   id: '/two-factor/',
   path: '/two-factor/',
@@ -182,46 +170,11 @@ const authAcceptInvitationInvitationIdRoute =
     path: '/accept-invitation/$invitationId',
     getParentRoute: () => authLayoutRoute,
   } as any)
-const ApiLabBlockGeneratorIndexRoute =
-  ApiLabBlockGeneratorIndexRouteImport.update({
-    id: '/api/lab/block-generator/',
-    path: '/api/lab/block-generator/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const dashboardOrganizationsInvitationsIndexRoute =
   dashboardOrganizationsInvitationsIndexRouteImport.update({
     id: '/organizations/invitations/',
     path: '/organizations/invitations/',
     getParentRoute: () => dashboardLayoutRoute,
-  } as any)
-const dashboardLabMcpAppsIndexRoute =
-  dashboardLabMcpAppsIndexRouteImport.update({
-    id: '/lab/mcp-apps/',
-    path: '/lab/mcp-apps/',
-    getParentRoute: () => dashboardLayoutRoute,
-  } as any)
-const dashboardLabChatIndexRoute = dashboardLabChatIndexRouteImport.update({
-  id: '/lab/chat/',
-  path: '/lab/chat/',
-  getParentRoute: () => dashboardLayoutRoute,
-} as any)
-const dashboardLabBlockGeneratorIndexRoute =
-  dashboardLabBlockGeneratorIndexRouteImport.update({
-    id: '/lab/block-generator/',
-    path: '/lab/block-generator/',
-    getParentRoute: () => dashboardLayoutRoute,
-  } as any)
-const ApiLabMcpAppsToolCallIndexRoute =
-  ApiLabMcpAppsToolCallIndexRouteImport.update({
-    id: '/api/lab/mcp-apps/tool-call/',
-    path: '/api/lab/mcp-apps/tool-call/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiLabMcpAppsUiBasicIndexRoute =
-  ApiLabMcpAppsUiBasicIndexRouteImport.update({
-    id: '/api/lab/mcp-apps/ui/basic/',
-    path: '/api/lab/mcp-apps/ui/basic/',
-    getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -245,18 +198,11 @@ export interface FileRoutesByFullPath {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/storage/$': typeof ApiStorageSplatRoute
   '/two-factor/': typeof authTwoFactorIndexRoute
-  '/lab/': typeof dashboardLabIndexRoute
   '/organizations/': typeof dashboardOrganizationsIndexRoute
   '/overview/': typeof dashboardOverviewIndexRoute
   '/settings/': typeof dashboardSettingsIndexRoute
   '/api/chat/': typeof ApiChatIndexRoute
-  '/lab/block-generator/': typeof dashboardLabBlockGeneratorIndexRoute
-  '/lab/chat/': typeof dashboardLabChatIndexRoute
-  '/lab/mcp-apps/': typeof dashboardLabMcpAppsIndexRoute
   '/organizations/invitations/': typeof dashboardOrganizationsInvitationsIndexRoute
-  '/api/lab/block-generator/': typeof ApiLabBlockGeneratorIndexRoute
-  '/api/lab/mcp-apps/tool-call/': typeof ApiLabMcpAppsToolCallIndexRoute
-  '/api/lab/mcp-apps/ui/basic/': typeof ApiLabMcpAppsUiBasicIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -278,18 +224,11 @@ export interface FileRoutesByTo {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/storage/$': typeof ApiStorageSplatRoute
   '/two-factor': typeof authTwoFactorIndexRoute
-  '/lab': typeof dashboardLabIndexRoute
   '/organizations': typeof dashboardOrganizationsIndexRoute
   '/overview': typeof dashboardOverviewIndexRoute
   '/settings': typeof dashboardSettingsIndexRoute
   '/api/chat': typeof ApiChatIndexRoute
-  '/lab/block-generator': typeof dashboardLabBlockGeneratorIndexRoute
-  '/lab/chat': typeof dashboardLabChatIndexRoute
-  '/lab/mcp-apps': typeof dashboardLabMcpAppsIndexRoute
   '/organizations/invitations': typeof dashboardOrganizationsInvitationsIndexRoute
-  '/api/lab/block-generator': typeof ApiLabBlockGeneratorIndexRoute
-  '/api/lab/mcp-apps/tool-call': typeof ApiLabMcpAppsToolCallIndexRoute
-  '/api/lab/mcp-apps/ui/basic': typeof ApiLabMcpAppsUiBasicIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -315,18 +254,11 @@ export interface FileRoutesById {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/api/storage/$': typeof ApiStorageSplatRoute
   '/(auth)/two-factor/': typeof authTwoFactorIndexRoute
-  '/(dashboard)/lab/': typeof dashboardLabIndexRoute
   '/(dashboard)/organizations/': typeof dashboardOrganizationsIndexRoute
   '/(dashboard)/overview/': typeof dashboardOverviewIndexRoute
   '/(dashboard)/settings/': typeof dashboardSettingsIndexRoute
   '/api/chat/': typeof ApiChatIndexRoute
-  '/(dashboard)/lab/block-generator/': typeof dashboardLabBlockGeneratorIndexRoute
-  '/(dashboard)/lab/chat/': typeof dashboardLabChatIndexRoute
-  '/(dashboard)/lab/mcp-apps/': typeof dashboardLabMcpAppsIndexRoute
   '/(dashboard)/organizations/invitations/': typeof dashboardOrganizationsInvitationsIndexRoute
-  '/api/lab/block-generator/': typeof ApiLabBlockGeneratorIndexRoute
-  '/api/lab/mcp-apps/tool-call/': typeof ApiLabMcpAppsToolCallIndexRoute
-  '/api/lab/mcp-apps/ui/basic/': typeof ApiLabMcpAppsUiBasicIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -351,18 +283,11 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/api/storage/$'
     | '/two-factor/'
-    | '/lab/'
     | '/organizations/'
     | '/overview/'
     | '/settings/'
     | '/api/chat/'
-    | '/lab/block-generator/'
-    | '/lab/chat/'
-    | '/lab/mcp-apps/'
     | '/organizations/invitations/'
-    | '/api/lab/block-generator/'
-    | '/api/lab/mcp-apps/tool-call/'
-    | '/api/lab/mcp-apps/ui/basic/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -384,18 +309,11 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/api/storage/$'
     | '/two-factor'
-    | '/lab'
     | '/organizations'
     | '/overview'
     | '/settings'
     | '/api/chat'
-    | '/lab/block-generator'
-    | '/lab/chat'
-    | '/lab/mcp-apps'
     | '/organizations/invitations'
-    | '/api/lab/block-generator'
-    | '/api/lab/mcp-apps/tool-call'
-    | '/api/lab/mcp-apps/ui/basic'
   id:
     | '__root__'
     | '/'
@@ -420,18 +338,11 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/api/storage/$'
     | '/(auth)/two-factor/'
-    | '/(dashboard)/lab/'
     | '/(dashboard)/organizations/'
     | '/(dashboard)/overview/'
     | '/(dashboard)/settings/'
     | '/api/chat/'
-    | '/(dashboard)/lab/block-generator/'
-    | '/(dashboard)/lab/chat/'
-    | '/(dashboard)/lab/mcp-apps/'
     | '/(dashboard)/organizations/invitations/'
-    | '/api/lab/block-generator/'
-    | '/api/lab/mcp-apps/tool-call/'
-    | '/api/lab/mcp-apps/ui/basic/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -446,9 +357,6 @@ export interface RootRouteChildren {
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiStorageSplatRoute: typeof ApiStorageSplatRoute
   ApiChatIndexRoute: typeof ApiChatIndexRoute
-  ApiLabBlockGeneratorIndexRoute: typeof ApiLabBlockGeneratorIndexRoute
-  ApiLabMcpAppsToolCallIndexRoute: typeof ApiLabMcpAppsToolCallIndexRoute
-  ApiLabMcpAppsUiBasicIndexRoute: typeof ApiLabMcpAppsUiBasicIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -565,13 +473,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof dashboardOrganizationsIndexRouteImport
       parentRoute: typeof dashboardLayoutRoute
     }
-    '/(dashboard)/lab/': {
-      id: '/(dashboard)/lab/'
-      path: '/lab'
-      fullPath: '/lab/'
-      preLoaderRoute: typeof dashboardLabIndexRouteImport
-      parentRoute: typeof dashboardLayoutRoute
-    }
     '/(auth)/two-factor/': {
       id: '/(auth)/two-factor/'
       path: '/two-factor'
@@ -642,54 +543,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authAcceptInvitationInvitationIdRouteImport
       parentRoute: typeof authLayoutRoute
     }
-    '/api/lab/block-generator/': {
-      id: '/api/lab/block-generator/'
-      path: '/api/lab/block-generator'
-      fullPath: '/api/lab/block-generator/'
-      preLoaderRoute: typeof ApiLabBlockGeneratorIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/(dashboard)/organizations/invitations/': {
       id: '/(dashboard)/organizations/invitations/'
       path: '/organizations/invitations'
       fullPath: '/organizations/invitations/'
       preLoaderRoute: typeof dashboardOrganizationsInvitationsIndexRouteImport
       parentRoute: typeof dashboardLayoutRoute
-    }
-    '/(dashboard)/lab/mcp-apps/': {
-      id: '/(dashboard)/lab/mcp-apps/'
-      path: '/lab/mcp-apps'
-      fullPath: '/lab/mcp-apps/'
-      preLoaderRoute: typeof dashboardLabMcpAppsIndexRouteImport
-      parentRoute: typeof dashboardLayoutRoute
-    }
-    '/(dashboard)/lab/chat/': {
-      id: '/(dashboard)/lab/chat/'
-      path: '/lab/chat'
-      fullPath: '/lab/chat/'
-      preLoaderRoute: typeof dashboardLabChatIndexRouteImport
-      parentRoute: typeof dashboardLayoutRoute
-    }
-    '/(dashboard)/lab/block-generator/': {
-      id: '/(dashboard)/lab/block-generator/'
-      path: '/lab/block-generator'
-      fullPath: '/lab/block-generator/'
-      preLoaderRoute: typeof dashboardLabBlockGeneratorIndexRouteImport
-      parentRoute: typeof dashboardLayoutRoute
-    }
-    '/api/lab/mcp-apps/tool-call/': {
-      id: '/api/lab/mcp-apps/tool-call/'
-      path: '/api/lab/mcp-apps/tool-call'
-      fullPath: '/api/lab/mcp-apps/tool-call/'
-      preLoaderRoute: typeof ApiLabMcpAppsToolCallIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/lab/mcp-apps/ui/basic/': {
-      id: '/api/lab/mcp-apps/ui/basic/'
-      path: '/api/lab/mcp-apps/ui/basic'
-      fullPath: '/api/lab/mcp-apps/ui/basic/'
-      preLoaderRoute: typeof ApiLabMcpAppsUiBasicIndexRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -742,23 +601,15 @@ const dashboardSettingsLayoutRouteWithChildren =
 
 interface dashboardLayoutRouteChildren {
   dashboardSettingsLayoutRoute: typeof dashboardSettingsLayoutRouteWithChildren
-  dashboardLabIndexRoute: typeof dashboardLabIndexRoute
   dashboardOrganizationsIndexRoute: typeof dashboardOrganizationsIndexRoute
   dashboardOverviewIndexRoute: typeof dashboardOverviewIndexRoute
-  dashboardLabBlockGeneratorIndexRoute: typeof dashboardLabBlockGeneratorIndexRoute
-  dashboardLabChatIndexRoute: typeof dashboardLabChatIndexRoute
-  dashboardLabMcpAppsIndexRoute: typeof dashboardLabMcpAppsIndexRoute
   dashboardOrganizationsInvitationsIndexRoute: typeof dashboardOrganizationsInvitationsIndexRoute
 }
 
 const dashboardLayoutRouteChildren: dashboardLayoutRouteChildren = {
   dashboardSettingsLayoutRoute: dashboardSettingsLayoutRouteWithChildren,
-  dashboardLabIndexRoute: dashboardLabIndexRoute,
   dashboardOrganizationsIndexRoute: dashboardOrganizationsIndexRoute,
   dashboardOverviewIndexRoute: dashboardOverviewIndexRoute,
-  dashboardLabBlockGeneratorIndexRoute: dashboardLabBlockGeneratorIndexRoute,
-  dashboardLabChatIndexRoute: dashboardLabChatIndexRoute,
-  dashboardLabMcpAppsIndexRoute: dashboardLabMcpAppsIndexRoute,
   dashboardOrganizationsInvitationsIndexRoute:
     dashboardOrganizationsInvitationsIndexRoute,
 }
@@ -779,9 +630,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiStorageSplatRoute: ApiStorageSplatRoute,
   ApiChatIndexRoute: ApiChatIndexRoute,
-  ApiLabBlockGeneratorIndexRoute: ApiLabBlockGeneratorIndexRoute,
-  ApiLabMcpAppsToolCallIndexRoute: ApiLabMcpAppsToolCallIndexRoute,
-  ApiLabMcpAppsUiBasicIndexRoute: ApiLabMcpAppsUiBasicIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

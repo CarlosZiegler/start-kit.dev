@@ -6,6 +6,7 @@
  *
  * Features:
  * - Hybrid loading strategy (preload small files, serve large files on-demand)
+ * - Unified asset pipeline for local filesystem and S3-compatible storage
  * - Configurable file filtering with include/exclude patterns
  * - Memory-efficient response generation
  * - Production-ready caching headers
@@ -15,6 +16,10 @@
  * PORT (number)
  *   - Server port number
  *   - Default: 3000
+ *
+ * STORAGE_PROVIDER (string)
+ *   - Storage backend for client assets
+ *   - Values: "local" (default), "s3", "seaweedfs", "cloudflare-r2", "digitalocean-spaces"
  *
  * ASSET_PRELOAD_MAX_SIZE (number)
  *   - Maximum file size in bytes to preload into memory
@@ -60,7 +65,7 @@
  *   - Default: text/,application/javascript,application/json,application/xml,image/svg+xml
  *
  * Usage:
- *   bun run server.ts
+ *   bun run backend.ts
  */
 
 import path from "node:path";
@@ -155,6 +160,28 @@ const GZIP_TYPES = (
   .map((v) => v.trim())
   .filter(Boolean);
 
+// MIME type lookup for S3 files (local files use Bun.file().type)
+const MIME_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".css": "text/css",
+  ".js": "application/javascript",
+  ".mjs": "application/javascript",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
+  ".ico": "image/x-icon",
+  ".txt": "text/plain",
+  ".xml": "application/xml",
+  ".map": "application/json",
+};
+
 /**
  * Convert a simple glob pattern to a regular expression
  * Supports * wildcard for matching any characters
@@ -173,6 +200,17 @@ function convertGlobToRegExp(globPattern: string): RegExp {
 function computeEtag(data: Uint8Array): string {
   const hash = Bun.hash(data);
   return `W/"${hash.toString(16)}-${data.byteLength.toString()}"`;
+}
+
+/**
+ * A file entry yielded by storage adapters.
+ * Both local and S3 adapters produce entries with this shape.
+ */
+interface FileEntry {
+  key: string;
+  size: number;
+  type: string;
+  read: () => Promise<Uint8Array>;
 }
 
 /**
@@ -319,18 +357,102 @@ function createCompositeGlobPattern(): Bun.Glob {
 }
 
 /**
- * Initialize static routes with intelligent preloading strategy
- * Small files are loaded into memory, large files are served on-demand
+ * List files from the local filesystem.
+ * Yields FileEntry objects for each file found in the client directory.
+ */
+async function* listLocalFiles(
+  clientDirectory: string
+): AsyncGenerator<FileEntry> {
+  const glob = createCompositeGlobPattern();
+  for await (const relativePath of glob.scan({ cwd: clientDirectory })) {
+    const filepath = path.join(clientDirectory, relativePath);
+
+    try {
+      const file = Bun.file(filepath);
+
+      if (!(await file.exists()) || file.size === 0) {
+        continue;
+      }
+
+      yield {
+        key: relativePath.split(path.sep).join(path.posix.sep),
+        size: file.size,
+        type: file.type || "application/octet-stream",
+        read: () => file.arrayBuffer().then((ab) => new Uint8Array(ab)),
+      };
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name !== "EISDIR") {
+        log.error({ filepath, error: error.message }, "Failed to stat file");
+      }
+    }
+  }
+}
+
+/**
+ * List files from S3-compatible storage.
+ * Yields FileEntry objects for each object found under the client/ prefix.
+ */
+async function* listS3Files(
+  client: S3Client,
+  prefix: string
+): AsyncGenerator<FileEntry> {
+  let continuationToken: string | undefined;
+
+  do {
+    const result = await client.list({
+      prefix,
+      startAfter: continuationToken,
+      maxKeys: 1000,
+    });
+
+    for (const item of result.contents ?? []) {
+      const key = item.key;
+      if (!key || key.endsWith("/")) {
+        continue;
+      }
+
+      const relativePath = key.replace(prefix, "");
+      const size = Number(item.size ?? 0);
+      if (size === 0) {
+        continue;
+      }
+
+      const ext = path.extname(key).toLowerCase();
+      const type = MIME_TYPES[ext] ?? "application/octet-stream";
+
+      const s3Key = key;
+      yield {
+        key: relativePath,
+        size,
+        type,
+        read: () => client.file(s3Key).bytes(),
+      };
+    }
+
+    continuationToken = result.nextContinuationToken;
+  } while (continuationToken);
+}
+
+/**
+ * Initialize static routes with intelligent preloading strategy.
+ * Accepts any async iterable of FileEntry objects — works identically
+ * for local filesystem and S3-compatible storage.
+ *
+ * Small files are preloaded into memory with ETag and Gzip support.
+ * Large files are served on-demand via the entry's read() function.
  */
 async function initializeStaticRoutes(
-  clientDirectory: string
+  source: AsyncIterable<FileEntry>
 ): Promise<PreloadResult> {
   const routes: Record<string, (req: Request) => Response | Promise<Response>> =
     {};
   const loaded: AssetMetadata[] = [];
   const skipped: AssetMetadata[] = [];
 
-  log.info({ clientDirectory }, "Loading static assets");
+  log.info(
+    { provider: STORAGE_MODE },
+    "Loading static assets"
+  );
   if (VERBOSE) {
     log.info(
       { maxPreloadSize: `${(MAX_PRELOAD_BYTES / 1024 / 1024).toFixed(2)} MB` },
@@ -353,65 +475,81 @@ async function initializeStaticRoutes(
   let totalPreloadedBytes = 0;
 
   try {
-    const glob = createCompositeGlobPattern();
-    for await (const relativePath of glob.scan({ cwd: clientDirectory })) {
-      const filepath = path.join(clientDirectory, relativePath);
-      const route = `/${relativePath.split(path.sep).join(path.posix.sep)}`;
+    for await (const entry of source) {
+      const route = `/${entry.key}`;
 
-      try {
-        // Get file metadata
-        const file = Bun.file(filepath);
+      const metadata: AssetMetadata = {
+        route,
+        size: entry.size,
+        type: entry.type,
+      };
 
-        // Skip if file doesn't exist or is empty
-        if (!(await file.exists()) || file.size === 0) {
-          continue;
-        }
+      const matchesPattern = isFileEligibleForPreloading(entry.key);
+      const withinSizeLimit = entry.size <= MAX_PRELOAD_BYTES;
 
-        const metadata: AssetMetadata = {
-          route,
-          size: file.size,
-          type: file.type || "application/octet-stream",
+      if (matchesPattern && withinSizeLimit) {
+        // Preload small files into memory with ETag and Gzip support
+        const bytes = new Uint8Array(await entry.read());
+        const gz = compressDataIfAppropriate(bytes, metadata.type);
+        const etag = ENABLE_ETAG ? computeEtag(bytes) : undefined;
+        const asset: InMemoryAsset = {
+          raw: bytes,
+          gz,
+          etag,
+          type: metadata.type,
+          immutable: true,
+          size: bytes.byteLength,
+        };
+        routes[route] = createResponseHandler(asset);
+
+        loaded.push({ ...metadata, size: bytes.byteLength });
+        totalPreloadedBytes += bytes.byteLength;
+      } else {
+        // Serve large or filtered files on-demand via the entry's read()
+        const onDemandRead = entry.read;
+        const onDemandType = entry.type;
+        const isImmutable =
+          route.includes("/assets/") || route.includes("/_build/");
+
+        routes[route] = async (req: Request) => {
+          try {
+            const bytes = await onDemandRead();
+
+            const headers: Record<string, string> = {
+              "Content-Type": onDemandType,
+              "Content-Length": String(bytes.byteLength),
+              "Cache-Control": isImmutable
+                ? "public, max-age=31536000, immutable"
+                : "public, max-age=3600",
+            };
+
+            if (
+              ENABLE_GZIP &&
+              bytes.byteLength >= GZIP_MIN_BYTES &&
+              isMimeTypeCompressible(onDemandType) &&
+              req.headers.get("accept-encoding")?.includes("gzip")
+            ) {
+              try {
+                const compressed = Bun.gzipSync(bytes.buffer as ArrayBuffer);
+                headers["Content-Encoding"] = "gzip";
+                headers["Content-Length"] = String(compressed.byteLength);
+                return new Response(compressed, { status: 200, headers });
+              } catch {
+                // Fall through to uncompressed response
+              }
+            }
+
+            return new Response(new Uint8Array(bytes), { status: 200, headers });
+          } catch (error) {
+            log.error(
+              { route, error: String(error) },
+              "Failed to serve on-demand asset"
+            );
+            return new Response("Not Found", { status: 404 });
+          }
         };
 
-        // Determine if file should be preloaded
-        const matchesPattern = isFileEligibleForPreloading(relativePath);
-        const withinSizeLimit = file.size <= MAX_PRELOAD_BYTES;
-
-        if (matchesPattern && withinSizeLimit) {
-          // Preload small files into memory with ETag and Gzip support
-          const bytes = new Uint8Array(await file.arrayBuffer());
-          const gz = compressDataIfAppropriate(bytes, metadata.type);
-          const etag = ENABLE_ETAG ? computeEtag(bytes) : undefined;
-          const asset: InMemoryAsset = {
-            raw: bytes,
-            gz,
-            etag,
-            type: metadata.type,
-            immutable: true,
-            size: bytes.byteLength,
-          };
-          routes[route] = createResponseHandler(asset);
-
-          loaded.push({ ...metadata, size: bytes.byteLength });
-          totalPreloadedBytes += bytes.byteLength;
-        } else {
-          // Serve large or filtered files on-demand
-          routes[route] = () => {
-            const fileOnDemand = Bun.file(filepath);
-            return new Response(fileOnDemand, {
-              headers: {
-                "Content-Type": metadata.type,
-                "Cache-Control": "public, max-age=3600",
-              },
-            });
-          };
-
-          skipped.push(metadata);
-        }
-      } catch (error: unknown) {
-        if (error instanceof Error && error.name !== "EISDIR") {
-          log.error({ filepath, error: error.message }, "Failed to load file");
-        }
+        skipped.push(metadata);
       }
     }
 
@@ -492,7 +630,7 @@ async function initializeStaticRoutes(
         writeTable(
           "Status       │ Path                            │ MIME Type                    │ Reason"
         );
-        allFiles.forEach((file) => {
+        for (const file of allFiles) {
           const isPreloaded = loaded.includes(file);
           const status = isPreloaded ? "MEMORY" : "ON-DEMAND";
           const reason =
@@ -503,12 +641,12 @@ async function initializeStaticRoutes(
                 : "filtered";
           const route =
             file.route.length > 30
-              ? file.route.substring(0, 27) + "..."
+              ? `${file.route.substring(0, 27)}...`
               : file.route;
           writeTable(
             `${status.padEnd(12)} │ ${route.padEnd(30)} │ ${file.type.padEnd(28)} │ ${reason.padEnd(10)}`
           );
-        });
+        }
       } else {
         writeTable("\nNo files found to display");
       }
@@ -538,137 +676,9 @@ async function initializeStaticRoutes(
     }
   } catch (error) {
     log.error(
-      { clientDirectory, error: String(error) },
+      { provider: STORAGE_MODE, error: String(error) },
       "Failed to load static files"
     );
-  }
-
-  return { routes, loaded, skipped };
-}
-
-/**
- * Initialize static routes from S3-compatible storage (AWS, SeaweedFS, R2, etc.)
- * Lists all objects in the client/ prefix and creates route handlers for each
- */
-async function initializeStaticRoutesFromS3(): Promise<PreloadResult> {
-  const routes: Record<string, (req: Request) => Response | Promise<Response>> =
-    {};
-  const loaded: AssetMetadata[] = [];
-  const skipped: AssetMetadata[] = [];
-
-  if (!s3) {
-    log.error("S3 client not initialized");
-    return { routes, loaded, skipped };
-  }
-
-  log.info(
-    { bucket: process.env.S3_BUCKET, prefix: S3_CLIENT_PREFIX },
-    "Loading static assets from S3"
-  );
-
-  let continuationToken: string | undefined;
-  let totalFiles = 0;
-
-  try {
-    do {
-      const result = await s3.list({
-        prefix: S3_CLIENT_PREFIX,
-        startAfter: continuationToken,
-        maxKeys: 1000,
-      });
-
-      for (const item of result.contents ?? []) {
-        const key = item.key;
-        if (!key) {
-          continue;
-        }
-
-        // Skip "directory" entries (keys ending with /)
-        if (key.endsWith("/")) {
-          continue;
-        }
-
-        const route = `/${key.replace(S3_CLIENT_PREFIX, "")}`;
-        const size = Number(item.size ?? 0);
-        const isImmutable =
-          route.includes("/assets/") || route.includes("/_build/");
-
-        // Determine MIME type from extension
-        const ext = path.extname(key).toLowerCase();
-        const mimeTypes: Record<string, string> = {
-          ".html": "text/html",
-          ".css": "text/css",
-          ".js": "application/javascript",
-          ".mjs": "application/javascript",
-          ".json": "application/json",
-          ".png": "image/png",
-          ".jpg": "image/jpeg",
-          ".jpeg": "image/jpeg",
-          ".gif": "image/gif",
-          ".svg": "image/svg+xml",
-          ".webp": "image/webp",
-          ".woff": "font/woff",
-          ".woff2": "font/woff2",
-          ".ttf": "font/ttf",
-          ".ico": "image/x-icon",
-          ".txt": "text/plain",
-          ".xml": "application/xml",
-          ".map": "application/json",
-        };
-        const contentType = mimeTypes[ext] ?? "application/octet-stream";
-
-        // Create handler that fetches from S3 on each request
-        const s3Key = key;
-        routes[route] = async (req: Request) => {
-          try {
-            const s3File = s3!.file(s3Key);
-            const bytes = await s3File.bytes();
-
-            const headers: Record<string, string> = {
-              "Content-Type": contentType,
-              "Content-Length": String(bytes.byteLength),
-              "Cache-Control": isImmutable
-                ? "public, max-age=31536000, immutable"
-                : "public, max-age=3600",
-            };
-
-            // Check if client accepts gzip and content is compressible
-            if (
-              ENABLE_GZIP &&
-              bytes.byteLength >= GZIP_MIN_BYTES &&
-              isMimeTypeCompressible(contentType) &&
-              req.headers.get("accept-encoding")?.includes("gzip")
-            ) {
-              try {
-                const compressed = Bun.gzipSync(bytes.buffer as ArrayBuffer);
-                headers["Content-Encoding"] = "gzip";
-                headers["Content-Length"] = String(compressed.byteLength);
-                return new Response(compressed, { status: 200, headers });
-              } catch {
-                // Fall through to uncompressed response
-              }
-            }
-
-            return new Response(bytes, { status: 200, headers });
-          } catch (error) {
-            log.error(
-              { route, s3Key, error: String(error) },
-              "Failed to fetch from S3"
-            );
-            return new Response("Not Found", { status: 404 });
-          }
-        };
-
-        loaded.push({ route, size, type: contentType });
-        totalFiles++;
-      }
-
-      continuationToken = result.nextContinuationToken;
-    } while (continuationToken);
-
-    log.info({ fileCount: totalFiles }, "Loaded routes from S3");
-  } catch (error) {
-    log.error({ error: String(error) }, "Failed to list S3 objects");
   }
 
   return { routes, loaded, skipped };
@@ -694,10 +704,13 @@ async function initializeServer() {
   }
 
   // Build static routes with intelligent preloading
-  // Use S3-compatible storage when STORAGE_PROVIDER is configured, otherwise use local filesystem
-  const { routes } = USE_S3_STORAGE
-    ? await initializeStaticRoutesFromS3()
-    : await initializeStaticRoutes(CLIENT_DIRECTORY);
+  // Both local and S3 modes go through the same unified pipeline
+  const source =
+    USE_S3_STORAGE && s3
+      ? listS3Files(s3, S3_CLIENT_PREFIX)
+      : listLocalFiles(CLIENT_DIRECTORY);
+
+  const { routes } = await initializeStaticRoutes(source);
 
   // Create Bun server
   const server = Bun.serve({
