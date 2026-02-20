@@ -31,73 +31,73 @@ if (typeof Reflect.getMetadata !== "function") {
 `;
 
 function reflectPolyfillPlugin(): Plugin {
-  return {
-    name: "reflect-polyfill",
-    renderChunk(code, chunk) {
-      if (chunk.fileName.includes("passkey")) {
-        return REFLECT_POLYFILL + code;
-      }
-      return null;
-    },
-  };
+	return {
+		name: "reflect-polyfill",
+		renderChunk(code, chunk) {
+			if (chunk.fileName.includes("passkey")) {
+				return REFLECT_POLYFILL + code;
+			}
+			return null;
+		},
+	};
 }
 
 export default defineConfig({
-  optimizeDeps: {
-    entries: ["src/**/*.{js,jsx,ts,tsx}"],
-    exclude: ["bun"],
-  },
-  server: {
-    port: 3000,
-    allowedHosts: [".ngrok-free.dev"],
-  },
-  ssr: {
-    external: ["bun"],
-    noExternal: [
-      "streamdown",
-      "@upstash/realtime",
-      "@/lib/storage",
-      "@json-render/react",
-      "@json-render/core",
-      "tanstack/ai",
-    ],
-  },
-  build: {
-    chunkSizeWarningLimit: 300, // Set limit to 1000 KB
-    rollupOptions: {
-      output: {
-        minify: true,
-      },
-      external: ["bun"],
-    },
-  },
-  plugins: [
-    reflectPolyfillPlugin(),
-    devtools(),
-    tsConfigPaths({
-      projects: ["./tsconfig.json"],
-    }),
-    postgres({
-      referrer: "start-template",
-    }),
-    tailwindcss(),
-    tanstackStart({
-      importProtection: {
-        enabled: false,
-      },
-      srcDirectory: "src",
-      router: {
-        routeToken: "layout",
-      },
-    }),
-    nitro({
-      vercel: {
-        functions: {
-          runtime: "bun1.x",
-        },
-      },
-    }),
+	optimizeDeps: {
+		entries: ["src/**/*.{js,jsx,ts,tsx}"],
+		exclude: ["bun"],
+	},
+	server: {
+		port: 3000,
+		allowedHosts: [".ngrok-free.dev"],
+	},
+	ssr: {
+		external: ["bun"],
+		noExternal: [
+			"streamdown",
+			"@upstash/realtime",
+			"@/lib/storage",
+			"@json-render/react",
+			"@json-render/core",
+			"tanstack/ai",
+		],
+	},
+	build: {
+		chunkSizeWarningLimit: 300, // Set limit to 1000 KB
+		rollupOptions: {
+			output: {
+				minify: true,
+			},
+			external: ["bun"],
+		},
+	},
+	plugins: [
+		reflectPolyfillPlugin(),
+		devtools(),
+		tsConfigPaths({
+			projects: ["./tsconfig.json"],
+		}),
+		postgres({
+			referrer: "start-template",
+		}),
+		tailwindcss(),
+		tanstackStart({
+			importProtection: {
+				enabled: false,
+			},
+			srcDirectory: "src",
+			router: {
+				routeToken: "layout",
+			},
+		}),
+		nitro({
+			vercel: {
+				functions: {
+					runtime: "bun1.x",
+				},
+			},
+		}),
 
-    viteReact(),
-  ],
+		viteReact(),
+	],
 });

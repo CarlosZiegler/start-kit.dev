@@ -61,13 +61,11 @@ const NavItem = ({ item }: { item: MenuItem }) => {
         key={item.title}
       >
         <SidebarMenuItem>
-          <CollapsibleTrigger>
-            <SidebarMenuButton isActive={!!parentActive} tooltip={item.title}>
-              {item.icon ? <item.icon /> : null}
-              <span>{item.title}</span>
-              <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-            </SidebarMenuButton>
-          </CollapsibleTrigger>
+          <SidebarMenuButton isActive={!!parentActive} render={<CollapsibleTrigger />}>
+            {item.icon ? <item.icon /> : null}
+            <span>{item.title}</span>
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
           <CollapsibleContent>
             <SidebarMenuSub>
               {(item.children ?? []).map((child) => {
