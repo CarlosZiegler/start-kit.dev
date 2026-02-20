@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { authClient } from "@/lib/auth/auth-client";
 import type { OrganizationRole } from "@/lib/auth/permissions";
 import {
   canDeleteInvitations,
@@ -10,33 +9,20 @@ import {
   canRemoveMembers,
   canUpdateMemberRoles,
 } from "@/lib/auth/permissions";
+import { activeMemberOptions } from "./organizations.factory.queries";
 
 export function useOrganizationPermissions(organizationId?: string) {
-  const { data: activeMember } = useQuery({
-    queryKey: ["organization", "member", organizationId],
-    queryFn: async () => {
-      if (!organizationId) {
-        return null;
-      }
-      const { data, error } = await authClient.organization.getActiveMember({
-        query: { organizationId },
-      });
-
-      if (error) {
-        return null;
-      }
-      return data;
-    },
-    enabled: Boolean(organizationId),
-    staleTime: 2 * 60 * 1000, // 5 minutes
-  });
+  const { data: activeMember } = useQuery(
+    organizationId
+      ? activeMemberOptions(organizationId)
+      : { queryKey: ["organization", "activeMember", undefined], queryFn: () => null, enabled: false }
+  );
 
   const role = (activeMember?.role as OrganizationRole) || "member";
-  const isOrganizationMember = true;
 
   return {
     role,
-    isOrganizationMember,
+    isOrganizationMember: Boolean(activeMember),
     canManageOrganization: canManageOrganization(role),
     canDeleteOrganization: canDeleteOrganization(role),
     canInvite: canInviteMembers(role),
