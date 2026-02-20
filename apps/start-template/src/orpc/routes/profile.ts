@@ -43,10 +43,6 @@ export const profileRouter = orpc.router({
     .handler(async ({ input, context }) => {
       const { session } = context;
 
-      if (!session?.user?.id) {
-        throw new Error("Unauthorized");
-      }
-
       // Delete old avatar records from DB and upload new avatar in parallel
       const [, result] = await Promise.all([
         context.db
@@ -103,10 +99,6 @@ export const profileRouter = orpc.router({
 
   removeAvatar: protectedProcedure.handler(async ({ context }) => {
     const { session } = context;
-
-    if (!session?.user?.id) {
-      throw new Error("Unauthorized");
-    }
 
     const [avatarFile] = await context.db
       .select()
