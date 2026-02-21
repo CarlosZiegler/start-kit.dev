@@ -56,7 +56,7 @@ flowchart TD
 
 ## Features
 
-- **AI Chat**: Streaming chat interface with AI SDK, multi-provider support
+- **AI Chat**: Streaming chat interface with AI SDK, multi-provider support, voice input (speech-to-text)
 - **Organizations**: Create/edit, slug check, logo; invite/accept; role-based permissions (owner/admin/member)
 - **Security**: 2FA (TOTP), Passkeys (WebAuthn), sessions view, email verification, change password
 - **Profile**: Avatar upload/remove; name/email update
@@ -154,6 +154,37 @@ Role-based access control via Better Auth:
   <Button>Invite</Button>
 </PermissionGuard>
 ```
+
+## Speech Input (Voice-to-Text)
+
+The AI Chat includes a speech input button that converts voice to text using a dual-mode approach for cross-browser support.
+
+**How it works:**
+
+| Browser | Mode | Backend Required |
+|---------|------|------------------|
+| Chrome | Web Speech API (real-time) | No |
+| Firefox, Safari | MediaRecorder + OpenAI Whisper | Yes |
+
+- **Chrome**: Uses the native Web Speech API for real-time transcription directly in the browser — no server calls needed.
+- **Firefox/Safari**: Records audio via MediaRecorder, sends the audio blob to `POST /api/transcribe`, which transcribes it using OpenAI Whisper (`whisper-1`) via the AI SDK's `experimental_transcribe()`.
+
+**API Endpoint:**
+
+```
+POST /api/transcribe
+Content-Type: multipart/form-data
+
+Body: FormData with "audio" field (Blob)
+Response: { "text": "transcribed text" }
+```
+
+Requires authentication (uses the same session as the chat). Returns `401` if not authenticated, `400` if no audio file is provided.
+
+**Requirements:**
+- `OPENAI_API_KEY` environment variable must be set (also used by AI Chat)
+
+**Component:** `SpeechInput` from `src/components/ai-elements/speech-input.tsx` — handles mode detection, recording UI, and callback wiring automatically.
 
 ## Storage
 
