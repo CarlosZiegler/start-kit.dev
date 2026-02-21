@@ -229,6 +229,24 @@ function RouteComponent() {
     setText((prev) => (prev ? `${prev} ${transcript}` : transcript));
   }, []);
 
+  const handleAudioRecorded = useCallback(async (audioBlob: Blob) => {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "recording.webm");
+
+    const response = await fetch("/api/transcribe", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Transcription failed");
+    }
+
+    const data = await response.json();
+    return data.text as string;
+  }, []);
+
   const handleTextChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
       setText(event.target.value);
@@ -375,6 +393,7 @@ function RouteComponent() {
                 </PromptInputActionMenu>
                 <SpeechInput
                   className="shrink-0"
+                  onAudioRecorded={handleAudioRecorded}
                   onTranscriptionChange={handleTranscriptionChange}
                   size="icon-sm"
                   variant="ghost"
