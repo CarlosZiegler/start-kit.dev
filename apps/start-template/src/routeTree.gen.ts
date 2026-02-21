@@ -21,6 +21,7 @@ import { Route as authResetPasswordRouteImport } from './routes/(auth)/reset-pas
 import { Route as authMagicLinkRouteImport } from './routes/(auth)/magic-link'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as dashboardSettingsLayoutRouteImport } from './routes/(dashboard)/settings/layout'
+import { Route as ApiTranscribeIndexRouteImport } from './routes/api/transcribe/index'
 import { Route as ApiChatIndexRouteImport } from './routes/api/chat/index'
 import { Route as dashboardSettingsIndexRouteImport } from './routes/(dashboard)/settings/index'
 import { Route as dashboardOverviewIndexRouteImport } from './routes/(dashboard)/overview/index'
@@ -95,6 +96,11 @@ const dashboardSettingsLayoutRoute = dashboardSettingsLayoutRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => dashboardLayoutRoute,
+} as any)
+const ApiTranscribeIndexRoute = ApiTranscribeIndexRouteImport.update({
+  id: '/api/transcribe/',
+  path: '/api/transcribe/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatIndexRoute = ApiChatIndexRouteImport.update({
   id: '/api/chat/',
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/overview/': typeof dashboardOverviewIndexRoute
   '/settings/': typeof dashboardSettingsIndexRoute
   '/api/chat/': typeof ApiChatIndexRoute
+  '/api/transcribe/': typeof ApiTranscribeIndexRoute
   '/organizations/invitations/': typeof dashboardOrganizationsInvitationsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/overview': typeof dashboardOverviewIndexRoute
   '/settings': typeof dashboardSettingsIndexRoute
   '/api/chat': typeof ApiChatIndexRoute
+  '/api/transcribe': typeof ApiTranscribeIndexRoute
   '/organizations/invitations': typeof dashboardOrganizationsInvitationsIndexRoute
 }
 export interface FileRoutesById {
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/(dashboard)/overview/': typeof dashboardOverviewIndexRoute
   '/(dashboard)/settings/': typeof dashboardSettingsIndexRoute
   '/api/chat/': typeof ApiChatIndexRoute
+  '/api/transcribe/': typeof ApiTranscribeIndexRoute
   '/(dashboard)/organizations/invitations/': typeof dashboardOrganizationsInvitationsIndexRoute
 }
 export interface FileRouteTypes {
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/overview/'
     | '/settings/'
     | '/api/chat/'
+    | '/api/transcribe/'
     | '/organizations/invitations/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -324,6 +334,7 @@ export interface FileRouteTypes {
     | '/overview'
     | '/settings'
     | '/api/chat'
+    | '/api/transcribe'
     | '/organizations/invitations'
   id:
     | '__root__'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/(dashboard)/overview/'
     | '/(dashboard)/settings/'
     | '/api/chat/'
+    | '/api/transcribe/'
     | '/(dashboard)/organizations/invitations/'
   fileRoutesById: FileRoutesById
 }
@@ -369,6 +381,7 @@ export interface RootRouteChildren {
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
   ApiStorageSplatRoute: typeof ApiStorageSplatRoute
   ApiChatIndexRoute: typeof ApiChatIndexRoute
+  ApiTranscribeIndexRoute: typeof ApiTranscribeIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -456,6 +469,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings'
       preLoaderRoute: typeof dashboardSettingsLayoutRouteImport
       parentRoute: typeof dashboardLayoutRoute
+    }
+    '/api/transcribe/': {
+      id: '/api/transcribe/'
+      path: '/api/transcribe'
+      fullPath: '/api/transcribe/'
+      preLoaderRoute: typeof ApiTranscribeIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/chat/': {
       id: '/api/chat/'
@@ -651,6 +671,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   ApiStorageSplatRoute: ApiStorageSplatRoute,
   ApiChatIndexRoute: ApiChatIndexRoute,
+  ApiTranscribeIndexRoute: ApiTranscribeIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

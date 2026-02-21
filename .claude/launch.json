@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "start-template",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "--cwd", "apps/start-template", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "email-dev",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "--cwd", "apps/start-template", "email:dev"],
+      "port": 5555
+    },
+    {
+      "name": "db-studio",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "--cwd", "apps/start-template", "db:studio"],
+      "port": 4983
+    },
+    {
+      "name": "vitest-ui",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "--cwd", "apps/start-template", "test:ui"],
+      "port": 51204
+    }
+  ]
+}
