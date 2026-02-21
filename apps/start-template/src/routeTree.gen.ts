@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ThemesRouteImport } from './routes/themes'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -38,6 +39,11 @@ import { Route as authTwoFactorOtpRouteImport } from './routes/(auth)/two-factor
 import { Route as authAcceptInvitationInvitationIdRouteImport } from './routes/(auth)/accept-invitation/$invitationId'
 import { Route as dashboardOrganizationsInvitationsIndexRouteImport } from './routes/(dashboard)/organizations/invitations/index'
 
+const ThemesRoute = ThemesRouteImport.update({
+  id: '/themes',
+  path: '/themes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/themes': typeof ThemesRoute
   '/settings': typeof dashboardSettingsLayoutRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/magic-link': typeof authMagicLinkRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/themes': typeof ThemesRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/magic-link': typeof authMagicLinkRoute
   '/reset-password': typeof authResetPasswordRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/themes': typeof ThemesRoute
   '/(dashboard)/settings': typeof dashboardSettingsLayoutRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/magic-link': typeof authMagicLinkRoute
@@ -276,6 +285,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/themes'
     | '/settings'
     | '/forgot-password'
     | '/magic-link'
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/themes'
     | '/forgot-password'
     | '/magic-link'
     | '/reset-password'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/terms'
+    | '/themes'
     | '/(dashboard)/settings'
     | '/(auth)/forgot-password'
     | '/(auth)/magic-link'
@@ -364,6 +376,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  ThemesRoute: typeof ThemesRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiChatResumeRoute: typeof ApiChatResumeRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
@@ -373,6 +386,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/themes': {
+      id: '/themes'
+      path: '/themes'
+      fullPath: '/themes'
+      preLoaderRoute: typeof ThemesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -646,6 +666,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  ThemesRoute: ThemesRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiChatResumeRoute: ApiChatResumeRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,

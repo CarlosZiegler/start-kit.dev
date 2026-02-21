@@ -9,6 +9,7 @@ import {
   LineChart,
   Mail,
   MessageCircle,
+  PaletteIcon,
   Sparkles,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -495,6 +496,71 @@ function LandingPage() {
           </p>
         </div>
         <TechStackMarquee className="opacity-90" items={TECH_STACK} />
+      </Section>
+
+      {/* Theme Customizer CTA */}
+      <Section>
+        <div className="mx-auto max-w-6xl">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              className="overflow-hidden rounded-2xl border border-border/40 shadow-2xl shadow-primary/5"
+            >
+              <img
+                src="/images/landing/theme-customizer-preview.png"
+                alt="Theme Customizer Preview"
+                className="h-auto w-full"
+                width={1400}
+                height={900}
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+            >
+              <div className="bg-primary/10 mb-6 flex size-14 items-center justify-center rounded-2xl">
+                <PaletteIcon className="text-primary size-7" />
+              </div>
+              <h2 className="mb-4 font-bold text-3xl tracking-tight md:text-4xl">
+                Make It Yours
+              </h2>
+              <p className="text-muted-foreground mb-8 max-w-lg text-lg leading-relaxed">
+                Customize colors, radius, and fonts with our live theme editor.
+                Preview changes in real-time, then copy the CSS or share your
+                theme via URL.
+              </p>
+              <div className="mb-6 flex flex-wrap gap-4">
+                <Link
+                  to="/themes"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-colors"
+                >
+                  <PaletteIcon className="size-4" />
+                  Open Theme Customizer
+                </Link>
+              </div>
+              <div className="text-muted-foreground flex flex-col gap-3 text-sm">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-primary" />
+                  21 color themes with light &amp; dark mode
+                </span>
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-primary" />
+                  Live preview with real components
+                </span>
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-primary" />
+                  Copy CSS, CLI command, or share via URL
+                </span>
+              </div>
+            </motion.div>
+          </div>
+        </div>
       </Section>
 
       {/* Feature Spotlights */}

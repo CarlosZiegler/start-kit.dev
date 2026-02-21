@@ -40,7 +40,7 @@ export function FeatureSpotlight({
         </p>
       </motion.div>
       <motion.div
-        className="relative aspect-square overflow-hidden rounded-3xl border border-border/50 shadow-2xl md:aspect-video"
+        className="relative overflow-hidden rounded-3xl border border-border/50 shadow-2xl"
         initial={{ opacity: 0, scale: 0.9 }}
         transition={{ duration: 0.6, delay: 0.2 }}
         viewport={{ once: true }}

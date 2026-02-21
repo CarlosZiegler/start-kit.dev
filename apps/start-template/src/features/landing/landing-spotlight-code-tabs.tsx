@@ -2,10 +2,7 @@
 
 import type { BundledLanguage } from "shiki";
 
-import {
-  CodeBlock,
-  CodeBlockCopyButton,
-} from "@/components/ai-elements/code-block";
+import { CodeBlock } from "@/components/ai-elements/code-block";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type SpotlightTab = {
@@ -51,9 +48,7 @@ export const LandingSpotlightCodeTabs = ({
                   className="h-full"
                   code={tab.code}
                   language={tab.language}
-                >
-                  <CodeBlockCopyButton aria-label="Copy code" type="button" />
-                </CodeBlock>
+                />
               </div>
             </TabsContent>
           ))}
