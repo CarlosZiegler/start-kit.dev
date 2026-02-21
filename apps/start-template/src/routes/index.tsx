@@ -306,7 +306,7 @@ export const Route = createFileRoute("/")({
       title,
       description,
       keywords:
-        "Start Kit, TanStack Start, React, SaaS starter, Better Auth, Drizzle ORM, oRPC, Tailwind, Resend, TanStack AI, AI Elements",
+        "Start Kit, TanStack Start, React, SaaS starter, Better Auth, Drizzle ORM, oRPC, Tailwind, Resend, AI SDK, AI Elements",
       url: "/",
       canonicalUrl: "/",
       image: "/images/landing/hero-bg.png",

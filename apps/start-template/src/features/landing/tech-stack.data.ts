@@ -6,7 +6,7 @@ import {
   siResend,
   siShadcnui,
   siTailwindcss,
-  siTanstack,
+
   siVitest,
 } from "simple-icons";
 
@@ -18,7 +18,7 @@ export const TECH_STACK: TechStackItem[] = [
   { label: "Tailwind v4", kind: "simple-icon", simpleIcon: siTailwindcss },
   { label: "shadcn/ui", kind: "simple-icon", simpleIcon: siShadcnui },
   { label: "Base-UI", kind: "fallback", fallbackText: "BASE" },
-  { label: "TanStack AI", kind: "simple-icon", simpleIcon: siTanstack },
+  { label: "AI SDK", kind: "fallback", fallbackText: "AI" },
   { label: "AI Elements", kind: "fallback", fallbackText: "AI" },
   { label: "Better Auth", kind: "simple-icon", simpleIcon: siBetterauth },
   { label: "Resend", kind: "simple-icon", simpleIcon: siResend },

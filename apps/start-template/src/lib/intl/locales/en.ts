@@ -394,7 +394,7 @@ export default {
     "Secure authentication with Better Auth, including social logins and 2FA.",
   TEMPLATE_FEATURE_AUTH_TITLE: "Authentication",
   TEMPLATE_FEATURE_AI_DESC:
-    "TanStack AI + AI Elements for streaming chat UIs, tool calling, and smart assistants.",
+    "AI SDK + AI Elements for streaming chat UIs, tool calling, and smart assistants.",
   TEMPLATE_FEATURE_AI_TITLE: "AI Elements",
   TEMPLATE_FEATURE_DB_DESC:
     "Postgres database with Drizzle ORM for type-safe queries.",
@@ -446,7 +446,7 @@ export default {
     "Subsecond response times thanks to Bun's runtime and Start Kit's SSR capabilities.",
   TEMPLATE_SPOTLIGHT_AI_TITLE: "AI, Built In",
   TEMPLATE_SPOTLIGHT_AI_DESC:
-    "Powered by TanStack AI + AI Elements for streaming chat UIs, tool calling, and agentic workflows.",
+    "Powered by AI SDK + AI Elements for streaming chat UIs, tool calling, and agentic workflows.",
   TEMPLATE_SPOTLIGHT_AUTH_TITLE: "Authentication, Done Right",
   TEMPLATE_SPOTLIGHT_AUTH_DESC:
     "Better Auth with first-class TanStack Start support: sessions, orgs, passkeys, 2FA, and more—ready to extend.",

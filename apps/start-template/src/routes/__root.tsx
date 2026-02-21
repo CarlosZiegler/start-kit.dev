@@ -22,9 +22,6 @@ const TanStackRouterDevtoolsPanel = import.meta.env.DEV
   ? lazy(() => import("@tanstack/react-router-devtools").then((m) => ({ default: m.TanStackRouterDevtoolsPanel })))
   : () => null;
 
-const aiDevtoolsPlugin = import.meta.env.DEV
-  ? (await import("@tanstack/react-ai-devtools")).aiDevtoolsPlugin
-  : () => ({ name: "noop", render: null });
 import { I18nextProvider } from "react-i18next";
 import appCss from "@/app.css?url";
 import {
@@ -131,7 +128,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                   plugins={[
                     { name: "Tanstack Query", render: <ReactQueryDevtoolsPanel /> },
                     { name: "Tanstack Router", render: <TanStackRouterDevtoolsPanel /> },
-                    aiDevtoolsPlugin(),
                   ]}
                 />
               )}

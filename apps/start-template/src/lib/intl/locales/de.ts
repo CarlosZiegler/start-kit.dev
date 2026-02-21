@@ -376,13 +376,13 @@ export default {
   SIGN_UP_TERMS_OF_SERVICE: "Nutzungsbedingungen",
   TEMPLATE_FEATURE_AI_TITLE: "KI-Elemente",
   TEMPLATE_FEATURE_AI_DESC:
-    "TanStack AI + AI Elements für Streaming-Chat-UIs, Tool-Calling und smarte Assistenten.",
+    "AI SDK + AI Elements für Streaming-Chat-UIs, Tool-Calling und smarte Assistenten.",
   TEMPLATE_FEATURE_EMAILS_TITLE: "E-Mails",
   TEMPLATE_FEATURE_EMAILS_DESC:
     "Transaktions-E-Mails mit Resend + React Email Templates (Auth, Einladungen, Abos).",
   TEMPLATE_SPOTLIGHT_AI_TITLE: "KI, Integriert",
   TEMPLATE_SPOTLIGHT_AI_DESC:
-    "Mit TanStack AI + AI Elements für Streaming-Chat-UIs, Tool-Calling und agentische Workflows.",
+    "Mit AI SDK + AI Elements für Streaming-Chat-UIs, Tool-Calling und agentische Workflows.",
   TEMPLATE_SPOTLIGHT_AUTH_TITLE: "Authentifizierung, richtig gemacht",
   TEMPLATE_SPOTLIGHT_AUTH_DESC:
     "Better Auth mit erstklassigem TanStack-Start-Support: Sessions, Orgs, Passkeys, 2FA und mehr – bereit zum Erweitern.",

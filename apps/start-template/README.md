@@ -22,7 +22,7 @@ Visit http://localhost:3000
 
 - React 19 + TanStack Start (React Router + SSR) + Vite
 - Auth via Better Auth (organizations, passkeys, 2FA)
-- AI: TanStack AI + OpenAI/Google/Anthropic integrations
+- AI: AI SDK + OpenAI/Google/Anthropic integrations
 - oRPC + TanStack Query (type-safe RPC end-to-end)
 - Payments: Stripe integration
 - Storage: S3-compatible providers (AWS, R2, SeaweedFS)
@@ -41,7 +41,7 @@ flowchart TD
   B -->|session/org| C[Postgres via Drizzle]
   A -->|orpc| D[oRPC server handlers]
   D --> C
-  A -->|AI prompt| E[TanStack AI + OpenAI/Google]
+  A -->|AI prompt| E[AI SDK + OpenAI/Google]
   A -->|forms| F[React Hook Form + Zod validators]
 ```
 
@@ -56,7 +56,7 @@ flowchart TD
 
 ## Features
 
-- **AI Chat**: Streaming chat interface with TanStack AI, multi-provider support
+- **AI Chat**: Streaming chat interface with AI SDK, multi-provider support
 - **Organizations**: Create/edit, slug check, logo; invite/accept; role-based permissions (owner/admin/member)
 - **Security**: 2FA (TOTP), Passkeys (WebAuthn), sessions view, email verification, change password
 - **Profile**: Avatar upload/remove; name/email update

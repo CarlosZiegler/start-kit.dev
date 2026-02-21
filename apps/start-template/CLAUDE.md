@@ -448,7 +448,7 @@ bun run test:coverage  # Coverage report
 | `@tanstack/react-start` | Full-stack framework |
 | `@tanstack/react-router` | File-based routing |
 | `@tanstack/react-query` | Async state management |
-| `@tanstack/ai` | AI integration |
+| `@ai-sdk/react` | AI SDK integration |
 | `@base-ui/react` | Accessible UI primitives |
 | `@orpc/*` | Type-safe RPC |
 | `better-auth` | Authentication |

@@ -59,7 +59,7 @@ export default defineConfig({
 			"@/lib/storage",
 			"@json-render/react",
 			"@json-render/core",
-			"tanstack/ai",
+			"@ai-sdk/react",
 		],
 	},
 	build: {

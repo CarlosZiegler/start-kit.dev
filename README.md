@@ -15,7 +15,7 @@ The interactive CLI walks you through branding, features, database, environment,
 - **Auth** — Better Auth with organizations, passkeys, 2FA, session management
 - **Database** — Drizzle ORM + PostgreSQL with row-level security
 - **API** — oRPC for end-to-end type-safe RPC with Zod validation
-- **AI** — TanStack AI with OpenAI, Anthropic, and Google providers
+- **AI** — AI SDK with OpenAI, Anthropic, and Google providers
 - **Payments** — Stripe subscriptions and billing
 - **UI** — Tailwind CSS v4 + shadcn/ui (Base UI) + 57 accessible components
 - **Storage** — S3-compatible object storage (AWS, R2, SeaweedFS, etc.)
@@ -33,7 +33,7 @@ The interactive CLI walks you through branding, features, database, environment,
 | Backend | Elysia, oRPC, Drizzle ORM |
 | Database | PostgreSQL |
 | Auth | Better Auth (orgs, passkeys, 2FA) |
-| AI | TanStack AI, AI SDK |
+| AI | AI SDK (OpenAI, Anthropic, Google) |
 | Payments | Stripe |
 | Storage | S3-compatible (AWS, Cloudflare R2, SeaweedFS) |
 | Testing | Vitest, React Testing Library |
