@@ -1,59 +1,59 @@
 {
-  "name": "create-start-kit-dev",
-  "version": "0.1.8",
-  "description": "CLI for scaffolding and configuring Start Kit projects",
-  "type": "module",
-  "license": "MIT",
-  "author": {
-    "name": "Carlos Ziegler",
-    "url": "https://github.com/CarlosZiegler"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/CarlosZiegler/start-kit.dev",
-    "directory": "packages/cli"
-  },
-  "homepage": "https://github.com/CarlosZiegler/start-kit.dev#readme",
-  "bugs": {
-    "url": "https://github.com/CarlosZiegler/start-kit.dev/issues"
-  },
-  "keywords": [
-    "cli",
-    "starter",
-    "template",
-    "tanstack",
-    "tanstack-start",
-    "bun",
-    "typescript",
-    "scaffold",
-    "create"
-  ],
-  "bin": {
-    "create-start-kit-dev": "./dist/index.mjs"
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsdown",
-    "dev": "tsdown --watch",
-    "publish:latest": "bun run build && npm publish --tag latest"
-  },
-  "dependencies": {
-    "@clack/prompts": "^1.0.1",
-    "giget": "^3.1.2",
-    "picocolors": "^1.1.1"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.3.9",
-    "tsdown": "^0.20.3",
-    "typescript": "^5.9.3"
-  },
-  "publishConfig": {
-    "access": "public",
-    "tag": "latest"
-  },
-  "engines": {
-    "bun": ">=1.0.0"
-  }
+	"name": "create-start-kit-dev",
+	"version": "0.1.8",
+	"description": "CLI for scaffolding and configuring Start Kit projects",
+	"type": "module",
+	"license": "MIT",
+	"author": {
+		"name": "Carlos Ziegler",
+		"url": "https://github.com/CarlosZiegler"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/CarlosZiegler/start-kit.dev",
+		"directory": "packages/cli"
+	},
+	"homepage": "https://github.com/CarlosZiegler/start-kit.dev#readme",
+	"bugs": {
+		"url": "https://github.com/CarlosZiegler/start-kit.dev/issues"
+	},
+	"keywords": [
+		"cli",
+		"starter",
+		"template",
+		"tanstack",
+		"tanstack-start",
+		"bun",
+		"typescript",
+		"scaffold",
+		"create"
+	],
+	"bin": {
+		"create-start-kit-dev": "./dist/index.mjs"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsdown",
+		"dev": "tsdown --watch",
+		"publish:latest": "bun run build && npm login && npm publish --tag latest"
+	},
+	"dependencies": {
+		"@clack/prompts": "^1.0.1",
+		"giget": "^3.1.2",
+		"picocolors": "^1.1.1"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.3.9",
+		"tsdown": "^0.20.3",
+		"typescript": "^5.9.3"
+	},
+	"publishConfig": {
+		"access": "public",
+		"tag": "latest"
+	},
+	"engines": {
+		"bun": ">=1.0.0"
+	}
 }
