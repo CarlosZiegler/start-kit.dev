@@ -109,7 +109,7 @@ cp .env.example .env
 - `GOOGLE_GENERATIVE_AI_API_KEY` — Google AI provider
 - `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — Payments
 - `BETTER_AUTH_TRUSTED_ORIGINS` — Comma-separated trusted origins for preview/staging
-- `DISABLE_SIGN_UP` — Set to `true` to block new account registration (useful for demo/example deployments)
+- `BETTER_AUTH_DISABLE_SIGN_UP` — Set to `true` to block new account registration (useful for demo/example deployments)
 
 ## Database Setup
 
