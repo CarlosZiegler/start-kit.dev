@@ -712,6 +712,30 @@ async function initializeServer() {
 
   const { routes } = await initializeStaticRoutes(source);
 
+  /**
+   * Add security headers to all responses.
+   */
+  function addSecurityHeaders(response: Response): Response {
+    const headers = new Headers(response.headers);
+    headers.set("X-Frame-Options", "DENY");
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    headers.set(
+      "Permissions-Policy",
+      "camera=(), microphone=(), geolocation=()"
+    );
+    headers.set("X-XSS-Protection", "1; mode=block");
+    headers.set(
+      "Content-Security-Policy",
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';"
+    );
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+
   // Create Bun server
   const server = Bun.serve({
     port: SERVER_PORT,
@@ -721,12 +745,15 @@ async function initializeServer() {
       ...routes,
 
       // Fallback to Start Kit handler for all other routes
-      "/*": (req: Request) => {
+      "/*": async (req: Request) => {
         try {
-          return handler.fetch(req);
+          const response = await handler.fetch(req);
+          return addSecurityHeaders(response);
         } catch (error) {
           log.error({ error: String(error) }, "Server handler error");
-          return new Response("Internal Server Error", { status: 500 });
+          return addSecurityHeaders(
+            new Response("Internal Server Error", { status: 500 })
+          );
         }
       },
     },

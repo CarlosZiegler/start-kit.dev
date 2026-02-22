@@ -109,6 +109,7 @@ cp .env.example .env
 - `GOOGLE_GENERATIVE_AI_API_KEY` — Google AI provider
 - `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — Payments
 - `BETTER_AUTH_TRUSTED_ORIGINS` — Comma-separated trusted origins for preview/staging
+- `DISABLE_SIGN_UP` — Set to `true` to block new account registration (useful for demo/example deployments)
 
 ## Database Setup
 
@@ -212,6 +213,59 @@ Features: presigned URLs, multi-tenant ownership, file validation (5MB max, imag
 bun run docker:build
 docker run -p 3000:3000 --env-file .env tanstack-start-app
 ```
+
+## Security
+
+### CORS & Trusted Origins
+
+The API uses environment-based CORS origin whitelisting. In development, `localhost:3000` and `localhost:3001` are trusted by default. In production, origins are derived from:
+
+1. `BETTER_AUTH_BASE_URL` (always included)
+2. Vercel preview URLs (auto-detected from `VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL`)
+3. `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated custom origins)
+
+Wildcard patterns are supported (e.g. `https://*.my-app.vercel.app`).
+
+To add ngrok or staging origins, set:
+```bash
+BETTER_AUTH_TRUSTED_ORIGINS="https://*.ngrok-free.dev,https://staging.example.com"
+```
+
+### Authentication & Email Verification
+
+- Email verification is **required** for email/password sign-ups.
+- Auth secret (`BETTER_AUTH_SECRET`) must be at least 32 characters. Generate one: `openssl rand -base64 32`.
+- The OpenAPI reference endpoint (`/api/auth/reference`) is disabled in production.
+
+### Security Headers
+
+The production server (`backend.ts`) adds these headers to all responses:
+
+| Header | Value |
+|--------|-------|
+| `X-Frame-Options` | `DENY` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+| `Content-Security-Policy` | `default-src 'self'; frame-ancestors 'none'` (+ inline scripts/styles) |
+
+### File Upload Security
+
+- Allowed types: JPEG, PNG, GIF, WebP (SVG is **not** allowed to prevent stored XSS)
+- Maximum file size: 5 MB
+- All storage endpoints verify file ownership (user ID or active organization ID)
+- The `listBucket` endpoint is scoped to the current user/organization prefix
+
+### Production Deployment Checklist
+
+- [ ] Set `BETTER_AUTH_SECRET` (min 32 chars)
+- [ ] Set `BETTER_AUTH_BASE_URL` to your production URL
+- [ ] Set `BETTER_AUTH_TRUSTED_ORIGINS` if using preview deployments or custom domains
+- [ ] Ensure `DATABASE_URL` points to a production-ready database
+- [ ] Configure `RESEND_API_KEY` for email delivery (required for email verification)
+- [ ] Set Stripe keys for payment features
+- [ ] Verify CORS rejects unknown origins (`curl -H "Origin: https://evil.com" ...`)
+- [ ] Verify `/api/auth/reference` returns 404 in production
 
 ## Troubleshooting
 

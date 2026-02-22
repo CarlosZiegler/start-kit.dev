@@ -498,6 +498,7 @@ cp apps/start-template/.env.example apps/start-template/.env
 | `S3_SECRET_ACCESS_KEY` | File storage |
 | `S3_BUCKET` | Storage bucket name |
 | `REDIS_URL` | Redis caching |
+| `DISABLE_SIGN_UP` | Set to `true` to block new account registration |
 
 ### 3. Database and Dev Server
 

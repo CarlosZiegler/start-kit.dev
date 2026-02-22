@@ -69,9 +69,12 @@ const errorMiddleware = (error: Error) => {
   }
 
   throw new ORPCError("INTERNAL_SERVER_ERROR", {
-    message: error.message,
+    message:
+      process.env.NODE_ENV === "production"
+        ? "An internal error occurred"
+        : error.message,
     status: 500,
-    cause: error,
+    ...(process.env.NODE_ENV !== "production" && { cause: error }),
   });
 };
 

@@ -108,7 +108,11 @@ export const Route = createFileRoute("/api/chat/")({
         } catch (error: unknown) {
           console.error(error);
           const message =
-            error instanceof Error ? error.message : "An error occurred";
+            process.env.NODE_ENV === "production"
+              ? "An error occurred"
+              : error instanceof Error
+                ? error.message
+                : "An error occurred";
           return new Response(JSON.stringify({ error: message }), {
             status: 500,
             headers: { "Content-Type": "application/json" },

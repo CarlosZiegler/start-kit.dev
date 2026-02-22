@@ -233,35 +233,9 @@ function createStripePlugin() {
   });
 }
 
-const normalizeOrigin = (origin: string) => origin.replace(/\/$/, "");
+import { getTrustedOrigins } from "../config/trusted-origins";
 
-const vercelOrigins = [
-  env.VERCEL_URL,
-  env.VERCEL_BRANCH_URL,
-  env.VERCEL_PROJECT_PRODUCTION_URL,
-]
-  .filter((value): value is string => Boolean(value))
-  .map((value) => value.replace(/^https?:\/\//, ""))
-  .map((value) => "https://" + value);
-
-const trustedOrigins = [
-  env.BETTER_AUTH_BASE_URL,
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "https://www.start-kit.dev",
-  "https://start-template-sepia.vercel.app",
-  "https://*.zieglers-projects.vercel.app",
-  "https://*.carlos-ricardo-zieglers-projects.vercel.app",
-  "https://*.ngrok-free.dev",
-  ...vercelOrigins,
-  ...(env.BETTER_AUTH_TRUSTED_ORIGINS
-    ? env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
-        .map((origin) => origin.trim())
-        .filter(Boolean)
-    : []),
-]
-  .map(normalizeOrigin)
-  .filter((origin, index, list) => list.indexOf(origin) === index);
+const trustedOrigins = getTrustedOrigins();
 
 const getAuthConfig = createServerOnlyFn(() =>
   betterAuth({
@@ -344,7 +318,8 @@ const getAuthConfig = createServerOnlyFn(() =>
     },
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: false,
+      requireEmailVerification: true,
+      disableSignUp: env.DISABLE_SIGN_UP,
       async sendResetPassword({
         url,
         user,
@@ -384,7 +359,7 @@ const getAuthConfig = createServerOnlyFn(() =>
     },
 
     plugins: [
-      openAPI(),
+      ...(process.env.NODE_ENV !== "production" ? [openAPI()] : []),
       lastLoginMethod(),
       twoFactor(),
       passkey(),

@@ -5,8 +5,6 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/png",
   "image/gif",
   "image/webp",
-  "image/svg+xml",
-  "image/svg",
 ]);
 
 export function validateFile(file: File | { type: string; size: number }): {
@@ -39,8 +37,6 @@ export function getFileExtension(mimeType: string): string {
     "image/png": "png",
     "image/gif": "gif",
     "image/webp": "webp",
-    "image/svg+xml": "svg",
-    "image/svg": "svg",
   };
 
   return mimeToExt[mimeType] ?? "png";

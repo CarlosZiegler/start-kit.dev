@@ -10,7 +10,7 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     RESEND_API_KEY: z.string(),
     RESEND_FROM_EMAIL: z.string().optional(),
-    BETTER_AUTH_SECRET: z.string(),
+    BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
     BETTER_AUTH_BASE_URL: z.url().default("http://localhost:3000"),
     BETTER_AUTH_TRUSTED_ORIGINS: z.string().optional(),
     VERCEL_URL: z.string().optional(),
@@ -39,6 +39,8 @@ export const env = createEnv({
     S3_ENDPOINT: z.string().optional(),
     S3_BUCKET: z.string(),
     DRIZZLE_QUERY_LOGGER_ENABLED: z.coerce.boolean().default(false),
+    // Sign-up control — set to "true" to disable new account creation
+    DISABLE_SIGN_UP: z.coerce.boolean().default(false),
     // Redis (optional - for resumable chat streams)
     REDIS_URL: z.string().url().optional(),
   },

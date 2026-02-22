@@ -262,12 +262,12 @@ export const storageRouter = orpc.router({
         throw new Error("Unauthorized");
       }
 
-      /*
-       * We want to List from the Bucket directly to verify what is there
-       * This is for Debugging purposes only
-       */
+      // Scope listing to current user or active organization prefix
+      const prefix = session.session.activeOrganizationId
+        ? `${session.session.activeOrganizationId}/`
+        : `${session.user.id}/`;
 
-      const result = await storage.list({ limit: input.limit });
+      const result = await storage.list({ prefix, limit: input.limit });
 
       return {
         files: result.files.map((f) => ({

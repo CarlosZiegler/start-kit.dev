@@ -36,6 +36,15 @@ export const Route = createFileRoute("/api/storage/$")({
             return new Response("File not found", { status: 404 });
           }
 
+          // Verify file ownership
+          if (
+            metadata.userId !== session.user.id &&
+            metadata.organizationId !==
+              session.session?.activeOrganizationId
+          ) {
+            return new Response("Forbidden", { status: 403 });
+          }
+
           const fileData = await storage.download(key);
 
           // Create a proper copy of the data to avoid buffer view issues

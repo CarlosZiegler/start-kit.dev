@@ -4,13 +4,20 @@ import { CORSPlugin } from "@orpc/server/plugins";
 import { createFileRoute } from "@tanstack/react-router";
 import { Elysia } from "elysia";
 
+import {
+  getTrustedOrigins,
+  isOriginTrusted,
+} from "@/lib/config/trusted-origins";
 import { router } from "@/orpc";
 import { createORPCContext } from "@/orpc/orpc-server";
+
+const trustedOrigins = getTrustedOrigins();
 
 const handler = new RPCHandler(router, {
   plugins: [
     new CORSPlugin({
-      origin: "*",
+      origin: (origin) =>
+        isOriginTrusted(origin, trustedOrigins) ? origin : undefined,
       allowMethods: ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"],
       credentials: true,
     }),
