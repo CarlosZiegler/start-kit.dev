@@ -4,7 +4,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { config } from "dotenv";
 import { nitro } from "nitro/vite";
-import { reflectPolyfillPlugin } from "plugins/vite.plugin.reflect";
+import { reflectPolyfillPlugin } from "plugins/vite-reflect";
 import { defineConfig } from "vite";
 import { postgres } from "vite-plugin-db";
 import tsConfigPaths from "vite-tsconfig-paths";
