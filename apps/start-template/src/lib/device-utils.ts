@@ -12,8 +12,7 @@ export const DEVICE_ICONS = {
 export const DEFAULT_DEVICE_ICON = Monitor;
 
 export function getDeviceIconRendered(type: DeviceType | undefined) {
-  const IconComponent = DEVICE_ICONS[type as DeviceType] || DEFAULT_DEVICE_ICON;
-  return IconComponent;
+  return DEVICE_ICONS[type as DeviceType] || DEFAULT_DEVICE_ICON;
 }
 
 export function getDeviceIconFromUserAgent(
