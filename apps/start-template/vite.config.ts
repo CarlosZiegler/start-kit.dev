@@ -4,7 +4,8 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { config } from "dotenv";
 import { nitro } from "nitro/vite";
-import { defineConfig, type Plugin } from "vite";
+import { reflectPolyfillPlugin } from "plugins/vite.plugin.reflect";
+import { defineConfig } from "vite";
 import { postgres } from "vite-plugin-db";
 import tsConfigPaths from "vite-tsconfig-paths";
 
@@ -22,7 +23,7 @@ export default defineConfig({
 		external: ["bun"],
 	},
 	build: {
-		chunkSizeWarningLimit: 500, // Set limit to 500 KB
+		chunkSizeWarningLimit: 500, // Set limit to 1000 KB
 		rollupOptions: {
 			output: {
 				minify: true,
@@ -31,6 +32,7 @@ export default defineConfig({
 		},
 	},
 	plugins: [
+		reflectPolyfillPlugin(),
 		devtools(),
 		tsConfigPaths({
 			projects: ["./tsconfig.json"],
