@@ -2,7 +2,7 @@
 
 All notable changes to `create-start-kit-dev` will be documented in this file.
 
-## [0.1.7] - 2026-02-22
+## [0.1.8] - 2026-02-22
 
 ### Added
 
