@@ -14,6 +14,7 @@ import { runEnv } from "./phases/env";
 import { runFeatures } from "./phases/features";
 import { runInfra } from "./phases/infra";
 import { runScaffold } from "./phases/scaffold";
+import { applyTheme, parseThemeArgs } from "./theme/theme-apply";
 
 const PHASES: {
   key: Phase;
@@ -126,21 +127,33 @@ async function runWizard(state: SetupState): Promise<void> {
 function showUsage(): void {
   console.log("Usage:");
   console.log(
-    "  bunx create-start-kit-dev create [project-name]   Create a new project"
+    "  bunx create-start-kit-dev create [project-name] [options]   Create a new project"
   );
   console.log(
-    "  bunx create-start-kit-dev init [--step <phase>]    Setup existing project"
+    "  bunx create-start-kit-dev init [--step <phase>]             Setup existing project"
   );
+  console.log("");
+  console.log("Theme options:");
+  console.log("  --theme <name>        Theme color (blue, red, green, purple, ...)");
+  console.log("  --base-color <name>   Base color (neutral, stone, zinc, gray)");
+  console.log("  --radius <preset>     Border radius (none, sm, md, lg, xl)");
+  console.log("  --font <name>         Font family (inter, geist, system)");
   console.log("");
   console.log("Phases: branding, features, database, env, infra");
 }
 
 async function handleCreate(args: string[]): Promise<void> {
-  const projectName = args.at(1);
+  const firstArg = args.at(1);
+  const projectName = firstArg && !firstArg.startsWith("--") ? firstArg : undefined;
 
   intro("Start Kit — Create New Project");
 
   const targetDir = await runScaffold(projectName);
+
+  const themeConfig = parseThemeArgs(args);
+  if (themeConfig) {
+    applyTheme(targetDir, themeConfig);
+  }
 
   // Change working directory to the new project
   process.chdir(targetDir);
