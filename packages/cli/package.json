@@ -1,7 +1,7 @@
 {
 	"name": "create-start-kit-dev",
 	"version": "0.1.8",
-	"description": "CLI for scaffolding and configuring Start Kit projects",
+	"description": "Create full-stack TypeScript SaaS apps with TanStack Start, Bun, Drizzle, Better-Auth, and Stripe in seconds",
 	"type": "module",
 	"license": "MIT",
 	"author": {
@@ -13,20 +13,29 @@
 		"url": "https://github.com/CarlosZiegler/start-kit.dev",
 		"directory": "packages/cli"
 	},
-	"homepage": "https://github.com/CarlosZiegler/start-kit.dev#readme",
+	"homepage": "https://start-kit.dev",
 	"bugs": {
 		"url": "https://github.com/CarlosZiegler/start-kit.dev/issues"
 	},
 	"keywords": [
 		"cli",
+		"create-app",
 		"starter",
+		"starter-kit",
+		"saas",
+		"boilerplate",
 		"template",
+		"scaffold",
 		"tanstack",
 		"tanstack-start",
-		"bun",
+		"react",
+		"fullstack",
 		"typescript",
-		"scaffold",
-		"create"
+		"bun",
+		"drizzle",
+		"better-auth",
+		"stripe",
+		"orpc"
 	],
 	"bin": {
 		"create-start-kit-dev": "./dist/index.mjs"
@@ -37,7 +46,8 @@
 	"scripts": {
 		"build": "tsdown",
 		"dev": "tsdown --watch",
-		"publish:latest": "bun run build && npm login && npm publish --tag latest"
+		"publish:latest": "bun run build && npm login && npm publish --tag latest",
+		"release": "bun run build && npm publish --tag latest && git tag v$(node -p \"require('./package.json').version\") && git push --tags"
 	},
 	"dependencies": {
 		"@clack/prompts": "^1.0.1",
@@ -54,6 +64,11 @@
 		"tag": "latest"
 	},
 	"engines": {
+		"node": ">=18.0.0",
 		"bun": ">=1.0.0"
+	},
+	"funding": {
+		"type": "github",
+		"url": "https://github.com/sponsors/CarlosZiegler"
 	}
 }
