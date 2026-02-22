@@ -36,7 +36,8 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "dev": "tsdown --watch"
+    "dev": "tsdown --watch",
+    "publish:latest": "bun run build && npm publish --tag latest"
   },
   "dependencies": {
     "@clack/prompts": "^1.0.1",
