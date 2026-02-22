@@ -1,6 +1,35 @@
 {
 	"name": "start-kit.dev",
+	"version": "1.0.0",
 	"private": true,
+	"description": "Full-stack TypeScript SaaS starter kit built on TanStack Start, Bun, Drizzle, Better-Auth, and Stripe",
+	"license": "MIT",
+	"author": {
+		"name": "Carlos Ziegler",
+		"url": "https://github.com/CarlosZiegler"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/CarlosZiegler/start-kit.dev"
+	},
+	"homepage": "https://github.com/CarlosZiegler/start-kit.dev#readme",
+	"bugs": {
+		"url": "https://github.com/CarlosZiegler/start-kit.dev/issues"
+	},
+	"keywords": [
+		"saas",
+		"starter-kit",
+		"tanstack-start",
+		"tanstack",
+		"typescript",
+		"bun",
+		"drizzle",
+		"better-auth",
+		"stripe",
+		"orpc",
+		"react",
+		"fullstack"
+	],
 	"scripts": {
 		"build": "turbo run build",
 		"dev": "turbo run dev",
