@@ -2,6 +2,22 @@
 
 All notable changes to `create-start-kit-dev` will be documented in this file.
 
+## [0.1.7] - 2026-02-22
+
+### Added
+
+- Theme customization flags for `create` command: `--theme`, `--base-color`, `--radius`, `--font`
+- 21 built-in color themes (neutral, stone, zinc, gray, amber, blue, cyan, emerald, fuchsia, green, indigo, lime, orange, pink, purple, red, rose, sky, teal, violet, yellow)
+- 4 base colors, 5 radius presets, 3 font options (Inter, Geist Sans, System)
+- Generated `app.css` includes full CSS variable blocks, `@theme inline`, `@layer base`, and marquee utilities
+- Graceful fallback to defaults for invalid flag values with warning messages
+- Unit tests for theme parsing and CSS generation (24 tests)
+
+### Changed
+
+- `create` command now skips `--` prefixed args when detecting project name
+- Updated usage help to document theme options
+
 ## [0.1.6] - 2026-02-19
 
 ### Fixed
