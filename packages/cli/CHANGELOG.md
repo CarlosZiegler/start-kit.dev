@@ -2,6 +2,22 @@
 
 All notable changes to `create-start-kit-dev` will be documented in this file.
 
+## [0.1.9] - 2026-02-23
+
+### Fixed
+
+- Fix Windows compatibility: replace `sh -c` shell execution with `Bun.spawn` argv arrays and `cwd` option
+- Fix `cd dir && bun install` failing on Windows by using direct process spawning with `cwd`
+- Fix `rm -f` file deletion on Windows by using Node.js `rmSync`
+- Fix potential stdout/stderr pipe deadlock by draining both streams concurrently with `Promise.all`
+- Use `path.resolve` / `path.join` for all file path operations instead of string concatenation with `/`
+
+### Added
+
+- `cwd` option support in `exec()` helper for cross-platform directory targeting
+- Error handling with try/catch in `exec()` returning exit code 127 on spawn failure
+- Unit tests for `exec()` helper (command execution, cwd support, non-zero exit codes)
+
 ## [0.1.8] - 2026-02-22
 
 ### Added
