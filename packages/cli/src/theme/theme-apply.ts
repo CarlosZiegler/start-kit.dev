@@ -1,4 +1,5 @@
 import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { log, spinner } from "@clack/prompts";
 import type {
   BaseColorName,
@@ -82,7 +83,7 @@ export function applyTheme(targetDir: string, config: ThemeConfig): void {
   s.start("Applying theme...");
 
   const css = generateFullAppCss(config);
-  writeFileSync(`${targetDir}/src/app.css`, css, "utf-8");
+  writeFileSync(join(targetDir, "src", "app.css"), css, "utf-8");
 
   s.stop(
     `Theme applied: ${config.theme} (base: ${config.baseColor}, radius: ${config.radius}, font: ${config.font})`

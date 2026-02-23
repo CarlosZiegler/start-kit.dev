@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const STATE_FILE = ".setup-state.json";
 
@@ -39,7 +40,7 @@ const DEFAULT_STATE: SetupState = {
 };
 
 function getStatePath(): string {
-  return `${process.cwd()}/${STATE_FILE}`;
+  return join(process.cwd(), STATE_FILE);
 }
 
 export function loadState(): SetupState {

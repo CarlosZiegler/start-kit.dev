@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "bun:test";
@@ -22,7 +22,9 @@ describe("exec", () => {
   });
 
   it("respects cwd", async () => {
-    const cwd = mkdtempSync(join(tmpdir(), "create-start-kit-dev-"));
+    const cwd = realpathSync(
+      mkdtempSync(join(tmpdir(), "create-start-kit-dev-"))
+    );
     tempDirs.push(cwd);
 
     const result = await exec(
