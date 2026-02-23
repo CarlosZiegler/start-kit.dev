@@ -57,26 +57,14 @@ function RouteComponent() {
     }) => {
       const result = await authClient.signUp.email({ email, password, name });
       if (result.error) {
-        throw new Error(result.error.message || "Registration failed", {
+        throw new Error(t("SIGN_UP_GENERIC_ERROR"), {
           cause: result.error,
         });
       }
       return result;
     },
-    async onSuccess(response) {
-      if (response.data?.user?.id) {
-        const baseName =
-          response.data.user.name || response.data.user.email || "organization";
-        const orgName = baseName.toLowerCase().replace(/\s+/g, "-");
-        const slug = `${orgName}-${response.data.user.id.slice(0, 8)}`;
-        const result = await authClient.organization.create({
-          name: orgName,
-          slug,
-        });
-        if (result.data) {
-          navigate({ to: "/overview" });
-        }
-      }
+    onSuccess() {
+      navigate({ to: "/sign-in" });
     },
   });
   const [showPassword, setShowPassword] = useState(false);

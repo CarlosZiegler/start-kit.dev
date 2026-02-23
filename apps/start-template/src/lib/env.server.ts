@@ -23,6 +23,7 @@ export const env = createEnv({
 			.default("localhost:3000"),
 		// Sign-up control — set to "true" to disable new account creation
 		BETTER_AUTH_DISABLE_SIGN_UP: z.coerce.boolean().default(false),
+		BETTER_AUTH_REQUERI_EMAIL_VERIFICATION: z.coerce.boolean().default(false),
 		// Vercel deployment trust domains
 		VERCEL_URL: z.string().optional(),
 		VERCEL_BRANCH_URL: z.string().optional(),

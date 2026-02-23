@@ -1,7 +1,11 @@
 /** biome-ignore-all lint/suspicious/useAwait: <explanation> */
 import { passkey } from "@better-auth/passkey";
-import { stripe } from "@better-auth/stripe";
+import { customAlphabet } from "nanoid";
 import pino from "pino";
+
+const generateId = customAlphabet(
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+);
 
 const log = pino({ level: "info" });
 
@@ -24,14 +28,11 @@ import { emailOTP } from "better-auth/plugins/email-otp";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
-import Stripe from "stripe";
 
 import ResetPasswordEmail from "@/components/emails/reset-password-email";
 import SendMagicLinkEmail from "@/components/emails/send-magic-link-email";
 import SendVerificationOtp from "@/components/emails/send-verification-otp";
-import { SubscriptionCancellationEmail } from "@/components/emails/subscription-cancellation-email";
-import { SubscriptionConfirmationEmail } from "@/components/emails/subscription-confirmation-email";
-import { SubscriptionUpgradeEmail } from "@/components/emails/subscription-upgrade-email";
+
 import VerifyEmail from "@/components/emails/verify-email";
 import WelcomeEmail from "@/components/emails/welcome-email";
 import { db } from "@/lib/db";
@@ -39,10 +40,9 @@ import * as schema from "@/lib/db/schema/auth";
 
 import { APP_CONFIG } from "../config/app.config";
 import { getTrustedOrigins } from "../config/trusted-origins";
-import { formatDate } from "../date-utils";
+
 import { env } from "../env.server";
-import { findPlanByName } from "../stripe/plan.utils";
-import { createStripePlans, PLANS_CLIENT } from "../stripe/plans.config";
+
 import { createStripePlugin } from "./auth-stripe";
 import { getOTPEmailConfig } from "./email-config";
 import { sendEmailSafely } from "./email-helpers";
@@ -64,9 +64,6 @@ const getAuthConfig = createServerOnlyFn(() =>
 			schema,
 		}),
 		baseURL: env.BETTER_AUTH_BASE_URL,
-		// advanced: {
-		//   database: { generateId: "uuid" },
-		// },
 		experimental: {
 			joins: true,
 		},
@@ -108,6 +105,35 @@ const getAuthConfig = createServerOnlyFn(() =>
 			user: {
 				create: {
 					after: async (user: User) => {
+						const baseName = user.name || user.email || "organization";
+						const orgName = baseName.toLowerCase().replace(/\s+/g, "-");
+						const slug = `${orgName}-${user.id.slice(0, 8)}`;
+						const now = new Date();
+						const orgId = generateId(32);
+						const memberId = generateId(32);
+
+						try {
+							await db.insert(schema.organization).values({
+								id: orgId,
+								name: orgName,
+								slug,
+								createdAt: now,
+							});
+
+							await db.insert(schema.member).values({
+								id: memberId,
+								organizationId: orgId,
+								userId: user.id,
+								role: "owner",
+								createdAt: now,
+							});
+						} catch (error) {
+							log.error(
+								{ error, userId: user.id },
+								"Failed to create default organization during sign-up",
+							);
+						}
+
 						await sendEmailSafely({
 							to: user.email,
 							subject: `Welcome to ${APP_CONFIG.name}`,
@@ -138,7 +164,7 @@ const getAuthConfig = createServerOnlyFn(() =>
 		},
 		emailAndPassword: {
 			enabled: true,
-			requireEmailVerification: true,
+			requireEmailVerification: env.BETTER_AUTH_REQUERI_EMAIL_VERIFICATION,
 			disableSignUp: env.BETTER_AUTH_DISABLE_SIGN_UP,
 			async sendResetPassword({
 				url,

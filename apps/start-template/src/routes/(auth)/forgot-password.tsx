@@ -25,16 +25,8 @@ function RouteComponent() {
   const { t } = useTranslation();
   const forgotPassword = useMutation({
     mutationFn: async ({ email }: ForgotPasswordFormData) => {
-      const result = await authClient.requestPasswordReset({ email });
-      if (result.error) {
-        throw new Error(
-          result.error.message || "Failed to send password reset email",
-          {
-            cause: result.error,
-          }
-        );
-      }
-      return result;
+      await authClient.requestPasswordReset({ email });
+      return { success: true };
     },
   });
   const [emailSent, setEmailSent] = useState(false);
@@ -48,7 +40,7 @@ function RouteComponent() {
 
   const onSubmit = (data: ForgotPasswordFormData) => {
     forgotPassword.mutate(data, {
-      onSuccess: () => {
+      onSettled: () => {
         setEmailSent(true);
       },
     });

@@ -55,7 +55,7 @@ function RouteComponent() {
         callbackURL: "/overview",
       });
       if (result.error) {
-        throw new Error(result.error.message || "Authentication failed", {
+        throw new Error(t("SIGN_IN_GENERIC_ERROR"), {
           cause: result.error,
         });
       }

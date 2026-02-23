@@ -361,6 +361,7 @@ export default {
   SIGN_IN: "Entrar",
   SIGN_IN_TO_CONTINUE: "Entre na sua conta para continuar",
   SIGN_IN_WITH_PASSKEY: "Entrar com Chave de Acesso",
+  SIGN_IN_GENERIC_ERROR: "E-mail ou senha inválidos.",
   SIGN_UP: "Cadastrar",
   SIGN_UP_ACCEPT_TERMS: "Eu aceito os",
   SIGN_UP_ALREADY_HAVE_ACCOUNT: "Já tem uma conta?",
@@ -378,6 +379,8 @@ export default {
   SIGN_UP_PRIVACY_POLICY: "Política de Privacidade",
   SIGN_UP_SIGN_IN: "Entrar",
   SIGN_UP_TERMS_OF_SERVICE: "Termos de Serviço",
+  SIGN_UP_GENERIC_ERROR:
+    "Não foi possível criar a conta. Verifique seus dados e tente novamente.",
   TEMPLATE_FEATURE_AI_TITLE: "Elementos de IA",
   TEMPLATE_FEATURE_AI_DESC:
     "AI SDK + AI Elements para UIs de chat com streaming, chamadas de ferramentas e assistentes inteligentes.",

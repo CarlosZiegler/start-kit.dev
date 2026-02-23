@@ -371,6 +371,7 @@ export default {
   SIGN_IN: "Sign In",
   SIGN_IN_TO_CONTINUE: "Sign in to your account to continue",
   SIGN_IN_WITH_PASSKEY: "Sign-in with Passkey",
+  SIGN_IN_GENERIC_ERROR: "Invalid email or password.",
   SIGN_UP: "Sign Up",
   SIGN_UP_ACCEPT_TERMS: "I accept the",
   SIGN_UP_ALREADY_HAVE_ACCOUNT: "Already have an account?",
@@ -388,6 +389,8 @@ export default {
   SIGN_UP_PRIVACY_POLICY: "Privacy Policy",
   SIGN_UP_SIGN_IN: "Sign in",
   SIGN_UP_TERMS_OF_SERVICE: "Terms of Service",
+  SIGN_UP_GENERIC_ERROR:
+    "Unable to create account. Please check your details and try again.",
   TEMPLATE_CTA_PRIMARY: "Get Started",
   TEMPLATE_CTA_SECONDARY: "View on GitHub",
   TEMPLATE_FEATURE_AUTH_DESC:

@@ -1,4 +1,6 @@
-<!-- TODO: Add banner image -->
+<p align="center">
+  <img src="docs/screenshots/hero.png" alt="Start Kit Landing Page" width="100%" />
+</p>
 
 <h1 align="center">Start Kit</h1>
 
@@ -30,6 +32,7 @@ bunx create-start-kit-dev create my-app
 
 - [Why Start Kit?](#why-start-kit)
 - [Features](#features)
+- [Screenshots](#screenshots)
 - [Architecture](#architecture)
 - [Getting Started with the CLI](#getting-started-with-the-cli)
 - [Project Structure](#project-structure)
@@ -93,6 +96,50 @@ Sessions are prefetched in the root layout's `beforeLoad` hook and made availabl
 | **Flow** | Interactive node-based diagrams with XY Flow |
 | **Testing** | Vitest + React Testing Library |
 | **Code Quality** | Ultracite (Biome) + TypeScript strict mode |
+
+---
+
+## Screenshots
+
+<details>
+<summary><strong>Sign In</strong> — Email, password, passkeys, and social auth</summary>
+<br />
+<p align="center">
+  <img src="docs/screenshots/sign-in.png" alt="Sign In" width="100%" />
+</p>
+</details>
+
+<details>
+<summary><strong>Dashboard</strong> — Analytics, charts, and data grid</summary>
+<br />
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" alt="Dashboard" width="100%" />
+</p>
+</details>
+
+<details>
+<summary><strong>AI Chat</strong> — Multi-provider streaming chat with voice input</summary>
+<br />
+<p align="center">
+  <img src="docs/screenshots/chat.png" alt="AI Chat" width="100%" />
+</p>
+</details>
+
+<details>
+<summary><strong>Settings</strong> — Profile, security, appearance, and billing</summary>
+<br />
+<p align="center">
+  <img src="docs/screenshots/settings.png" alt="Settings" width="100%" />
+</p>
+</details>
+
+<details>
+<summary><strong>Organization</strong> — Team management, invitations, and RBAC</summary>
+<br />
+<p align="center">
+  <img src="docs/screenshots/organization.png" alt="Organization" width="100%" />
+</p>
+</details>
 
 ---
 

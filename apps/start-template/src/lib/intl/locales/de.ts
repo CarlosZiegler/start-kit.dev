@@ -357,6 +357,7 @@ export default {
   SIGN_IN: "Anmelden",
   SIGN_IN_TO_CONTINUE: "Melden Sie sich bei Ihrem Konto an, um fortzufahren",
   SIGN_IN_WITH_PASSKEY: "Mit Passkey anmelden",
+  SIGN_IN_GENERIC_ERROR: "Ungültige E-Mail oder Passwort.",
   SIGN_UP: "Registrieren",
   SIGN_UP_ACCEPT_TERMS: "Ich akzeptiere die",
   SIGN_UP_ALREADY_HAVE_ACCOUNT: "Bereits ein Konto?",
@@ -374,6 +375,8 @@ export default {
   SIGN_UP_PRIVACY_POLICY: "Datenschutzerklärung",
   SIGN_UP_SIGN_IN: "Anmelden",
   SIGN_UP_TERMS_OF_SERVICE: "Nutzungsbedingungen",
+  SIGN_UP_GENERIC_ERROR:
+    "Konto konnte nicht erstellt werden. Bitte überprüfen Sie Ihre Angaben und versuchen Sie es erneut.",
   TEMPLATE_FEATURE_AI_TITLE: "KI-Elemente",
   TEMPLATE_FEATURE_AI_DESC:
     "AI SDK + AI Elements für Streaming-Chat-UIs, Tool-Calling und smarte Assistenten.",
