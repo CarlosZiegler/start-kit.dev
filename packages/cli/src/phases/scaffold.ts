@@ -1,4 +1,5 @@
-import { existsSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
+import { resolve } from "node:path";
 import { isCancel, log, spinner, text } from "@clack/prompts";
 import { downloadTemplate } from "giget";
 
@@ -23,14 +24,19 @@ async function fetchTemplate(targetDir: string): Promise<void> {
     process.exit(1);
   }
 
-  await exec(`git -C "${targetDir}" init`);
+  const gitInit = await exec(["git", "init"], { cwd: targetDir });
+
+  if (gitInit.exitCode !== 0) {
+    log.warn("Could not initialize git repository");
+    log.warn(gitInit.stderr || "git init failed");
+  }
 }
 
 async function installDeps(targetDir: string): Promise<void> {
   const s = spinner();
   s.start("Installing dependencies...");
 
-  const result = await exec(`cd "${targetDir}" && bun install`);
+  const result = await exec(["bun", "install"], { cwd: targetDir });
 
   if (result.exitCode !== 0) {
     s.stop("Install failed");
@@ -62,7 +68,7 @@ export async function runScaffold(projectNameArg?: string): Promise<string> {
   }
 
   const dirName = toKebabCase(projectName as string);
-  const targetDir = `${process.cwd()}/${dirName}`;
+  const targetDir = resolve(process.cwd(), dirName);
 
   if (existsSync(targetDir)) {
     log.error(`Directory "${dirName}" already exists.`);
@@ -75,7 +81,7 @@ export async function runScaffold(projectNameArg?: string): Promise<string> {
   await installDeps(targetDir);
 
   // Remove the state file if it exists from the template
-  await exec(`rm -f "${targetDir}/.setup-state.json"`);
+  rmSync(resolve(targetDir, ".setup-state.json"), { force: true });
 
   log.success(`Project created in ./${dirName}`);
 
