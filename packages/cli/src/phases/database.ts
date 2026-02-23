@@ -44,9 +44,15 @@ export async function runDatabase(state: SetupState): Promise<SetupState> {
     const s = spinner();
     s.start("Creating instant Neon database via Instagres...");
 
-    const result = await exec(
-      "bunx get-db --yes --env .env --key DATABASE_URL"
-    );
+    const result = await exec([
+      "bunx",
+      "get-db",
+      "--yes",
+      "--env",
+      ".env",
+      "--key",
+      "DATABASE_URL",
+    ]);
 
     if (result.exitCode !== 0) {
       s.stop("Failed to create database");
@@ -131,9 +137,13 @@ export async function runDatabase(state: SetupState): Promise<SetupState> {
     writeEnvFile(".env", envVars);
 
     // Use --force to skip interactive confirmation prompts
-    const migrateResult = await exec(
-      "bun --env-file=.env drizzle-kit push --force"
-    );
+    const migrateResult = await exec([
+      "bun",
+      "--env-file=.env",
+      "drizzle-kit",
+      "push",
+      "--force",
+    ]);
 
     if (migrateResult.exitCode !== 0) {
       ms.stop("Schema push failed");

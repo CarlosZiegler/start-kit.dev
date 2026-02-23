@@ -79,17 +79,33 @@ export function generateSecret(bytes = 32): string {
 }
 
 export async function exec(
-  command: string
+  command: string[],
+  options?: { cwd?: string }
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  // biome-ignore lint/correctness/noUndeclaredVariables: Bun global available at runtime
-  const proc = Bun.spawn(["sh", "-c", command], {
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const stdout = await new Response(proc.stdout).text();
-  const stderr = await new Response(proc.stderr).text();
-  const exitCode = await proc.exited;
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode };
+  if (command.length === 0) {
+    return { stdout: "", stderr: "No command provided", exitCode: 1 };
+  }
+
+  try {
+    // biome-ignore lint/correctness/noUndeclaredVariables: Bun global available at runtime
+    const proc = Bun.spawn(command, {
+      cwd: options?.cwd,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+
+    const stdout = await new Response(proc.stdout).text();
+    const stderr = await new Response(proc.stderr).text();
+    const exitCode = await proc.exited;
+
+    return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode };
+  } catch (error) {
+    return {
+      stdout: "",
+      stderr: error instanceof Error ? error.message : String(error),
+      exitCode: 127,
+    };
+  }
 }
 
 export async function testDbConnection(

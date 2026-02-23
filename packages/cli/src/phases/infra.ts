@@ -11,7 +11,7 @@ async function startDockerService(
 ): Promise<void> {
   const s = spinner();
   s.start(`Starting ${name}...`);
-  const result = await exec(`docker compose up -d ${service}`);
+  const result = await exec(["docker", "compose", "up", "-d", service]);
   if (result.exitCode !== 0) {
     s.stop(`Failed to start ${name}`);
     log.error(result.stderr);
