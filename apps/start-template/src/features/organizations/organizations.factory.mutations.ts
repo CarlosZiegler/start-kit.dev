@@ -77,7 +77,7 @@ export const removeMemberOptions = () =>
 
 type UpdateMemberRoleInput = {
   memberId: string;
-  role: string;
+  role: "admin" | "owner" | "member";
   organizationId: string;
 };
 

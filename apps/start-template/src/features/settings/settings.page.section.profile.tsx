@@ -23,6 +23,11 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  removeAvatarOptions,
+  updateProfileOptions,
+  uploadAvatarOptions,
+} from "@/features/settings/settings.factory.mutations";
 import { authClient } from "@/lib/auth/auth-client";
 import {
   type ProfileFormData,
@@ -55,33 +60,30 @@ export function ProfileSection() {
     },
   });
 
-  const updateProfile = useMutation(
-    orpc.profile.update.mutationOptions({
-      onSuccess: () => {
-        refetchSession();
-      },
-    })
-  );
+  const updateProfile = useMutation({
+    ...updateProfileOptions(),
+    onSuccess: () => {
+      refetchSession();
+    },
+  });
 
-  const uploadAvatar = useMutation(
-    orpc.profile.uploadAvatar.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: ["profile", "getAvatarUrl"],
-        });
-        refetchSession();
-      },
-    })
-  );
+  const uploadAvatar = useMutation({
+    ...uploadAvatarOptions(),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["profile", "getAvatarUrl"],
+      });
+      refetchSession();
+    },
+  });
 
-  const removeAvatar = useMutation(
-    orpc.profile.removeAvatar.mutationOptions({
-      onSuccess: () => {
-        avatarQuery.refetch();
-        refetchSession();
-      },
-    })
-  );
+  const removeAvatar = useMutation({
+    ...removeAvatarOptions(),
+    onSuccess: () => {
+      avatarQuery.refetch();
+      refetchSession();
+    },
+  });
 
   const onSubmit = (data: ProfileFormData) => {
     updateProfile.mutate(data);

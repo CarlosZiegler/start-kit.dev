@@ -1,10 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { inviteMemberOptions } from "@/features/organizations/organizations.factory.mutations";
 import { organizationInvitationsOptions } from "@/features/organizations/organizations.factory.queries";
+import { useMutationWithToast } from "@/hooks/use-mutation-with-toast";
 
 const inviteMemberSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -66,25 +66,19 @@ export function InviteMemberDialog({
     },
   });
 
-  const inviteMemberMutation = useMutation({
-    ...inviteMemberOptions(),
+  const inviteMemberMutation = useMutationWithToast({
+    mutationFn: inviteMemberOptions().mutationFn,
+    successMessage: t("ORG_INVITATION_SENT"),
+    errorMessage: t("COMMON_UNKNOWN_ERROR"),
     onSuccess: (data) => {
-      // Invitation sent successfully
-      // Invalidate org invitations
       if (data.data?.organizationId) {
         queryClient.invalidateQueries({
           queryKey: organizationInvitationsOptions(data.data.organizationId)
             .queryKey,
         });
       }
-      toast.success(t("ORG_INVITATION_SENT"));
       form.reset();
       onOpenChange(false);
-    },
-    onError: (error: Error) => {
-      toast.error(
-        `${t("ORG_INVITATION_SEND_FAILED")}${error.message || t("COMMON_UNKNOWN_ERROR")}`
-      );
     },
   });
 

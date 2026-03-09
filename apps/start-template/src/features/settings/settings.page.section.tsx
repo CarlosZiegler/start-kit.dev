@@ -1,23 +1,38 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { type ComponentType, Suspense, lazy } from "react";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { SubscriptionSection } from "@/features/subscription/subscription.section";
-
-import { AppearanceSection } from "./settings.page.section.apearence";
-import { ProfileSection } from "./settings.page.section.profile";
-import { SecuritySection } from "./settings.page.section.security";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
- * Registry of settings section components
- * Add new sections here to make them available
+ * Registry of lazily-loaded settings section components.
+ * Each section is code-split and only loaded when selected.
  */
-const SECTION_COMPONENTS: Record<string, ComponentType> = {
-  profile: ProfileSection,
-  security: SecuritySection,
-  appearance: AppearanceSection,
-  billing: SubscriptionSection,
+const SECTION_COMPONENTS: Record<
+  string,
+  React.LazyExoticComponent<ComponentType>
+> = {
+  profile: lazy(() =>
+    import("./settings.page.section.profile").then((m) => ({
+      default: m.ProfileSection,
+    }))
+  ),
+  security: lazy(() =>
+    import("./settings.page.section.security").then((m) => ({
+      default: m.SecuritySection,
+    }))
+  ),
+  appearance: lazy(() =>
+    import("./settings.page.section.appearance").then((m) => ({
+      default: m.AppearanceSection,
+    }))
+  ),
+  billing: lazy(() =>
+    import("@/features/subscription/subscription.section").then((m) => ({
+      default: m.SubscriptionSection,
+    }))
+  ),
 };
 
 const DEFAULT_SECTION = "profile";
@@ -28,7 +43,15 @@ export function SettingsContent({ id }: { id: string }) {
 
   return (
     <ScrollArea className="flex h-[calc(100vh-135px)] w-full max-w-8xl">
-      <SectionComponent />
+      <Suspense
+        fallback={
+          <div className="flex h-full w-full items-center justify-center py-12">
+            <Spinner className="size-6" />
+          </div>
+        }
+      >
+        <SectionComponent />
+      </Suspense>
     </ScrollArea>
   );
 }

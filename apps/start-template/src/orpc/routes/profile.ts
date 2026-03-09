@@ -1,3 +1,4 @@
+import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -22,7 +23,7 @@ export const profileRouter = orpc.router({
       const { session } = context;
 
       if (!session?.user?.id) {
-        throw new Error("Unauthorized");
+        throw new ORPCError("UNAUTHORIZED");
       }
 
       const [updatedUser] = await context.db
@@ -129,37 +130,32 @@ export const profileRouter = orpc.router({
       const targetUserId = input.userId ?? session?.user?.id;
 
       if (!targetUserId) {
-        throw new Error("User ID is required");
+        throw new ORPCError("BAD_REQUEST", { message: "User ID is required" });
       }
 
-      // First get the user to find their avatar reference
-      const [targetUser] = await context.db
-        .select({ id: user.id, image: user.image })
+      // Single query with LEFT JOIN to get user and avatar file in one round-trip
+      const [result] = await context.db
+        .select({
+          userId: user.id,
+          userImage: user.image,
+          fileId: file.id,
+          fileKey: file.key,
+        })
         .from(user)
+        .leftJoin(file, eq(file.id, user.image))
         .where(eq(user.id, targetUserId))
         .limit(1);
 
-      if (!targetUser?.image) {
+      if (!result || !result.fileKey) {
         return { imageUrl: null, imageId: null };
       }
 
-      // Then get the file metadata by ID
-      const [avatarFile] = await context.db
-        .select({ id: file.id, key: file.key })
-        .from(file)
-        .where(eq(file.id, targetUser.image))
-        .limit(1);
-
-      let imageUrl: string | null = null;
-
-      if (avatarFile) {
-        // Use presigned S3 URL
-        imageUrl = await storage.getUrl(avatarFile.key);
-      }
+      // Use presigned S3 URL
+      const imageUrl = await storage.getUrl(result.fileKey);
 
       return {
         imageUrl,
-        imageId: avatarFile?.id ?? null,
+        imageId: result.fileId ?? null,
       };
     }),
 });

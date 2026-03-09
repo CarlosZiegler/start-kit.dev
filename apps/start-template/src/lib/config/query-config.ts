@@ -15,6 +15,10 @@ export const QUERY_STALE_TIMES = {
   ACTIVE_MEMBER: 15_000,
   /** User session - 1 minute */
   SESSION: 60_000,
+  /** Auth session - 2 minutes */
+  AUTH_SESSION: 120_000,
+  /** Payment/Stripe plans - 30 seconds */
+  PAYMENT: 30_000,
   /** Subscription data - 5 minutes */
   SUBSCRIPTION: 300_000,
 } as const;

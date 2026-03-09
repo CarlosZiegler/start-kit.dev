@@ -27,7 +27,7 @@ export const chatRouter = orpc.router({
     .input(
       z.object({
         id: z.string(),
-        messages: z.array(z.any()).optional(),
+        messages: z.array(z.record(z.string(), z.unknown())).optional(),
         activeStreamId: z.string().nullable().optional(),
         title: z.string().nullable().optional(),
       })

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { DefaultCatchBoundary } from "./components/error-boundary";
 import { NotFound } from "./components/not-found";
 import { authQueryOptions } from "./lib/auth/queries";
+import { QUERY_STALE_TIMES } from "./lib/config/query-config";
 import { orpc } from "./orpc/orpc-client";
 import { routeTree } from "./routeTree.gen";
 
@@ -14,7 +15,7 @@ export function getRouter() {
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
-        staleTime: 1000 * 60 * 2, // 2 minutes
+        staleTime: QUERY_STALE_TIMES.AUTH_SESSION,
       },
     },
     queryCache: new QueryCache({

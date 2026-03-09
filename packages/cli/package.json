@@ -50,13 +50,13 @@
 		"release": "bun run build && npm publish --tag latest && git tag v$(node -p \"require('./package.json').version\") && git push --tags"
 	},
 	"dependencies": {
-		"@clack/prompts": "^1.0.1",
+		"@clack/prompts": "^1.1.0",
 		"giget": "^3.1.2",
 		"picocolors": "^1.1.1"
 	},
 	"devDependencies": {
-		"@types/bun": "^1.3.9",
-		"tsdown": "^0.20.3",
+		"@types/bun": "^1.3.10",
+		"tsdown": "^0.21.0",
 		"typescript": "^5.9.3"
 	},
 	"publishConfig": {

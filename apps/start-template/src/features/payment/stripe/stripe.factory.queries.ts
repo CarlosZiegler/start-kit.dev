@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { authClient } from "@/lib/auth/auth-client";
+import { QUERY_STALE_TIMES } from "@/lib/config/query-config";
 
 export const subscriptionKeys = {
   all: ["subscription"] as const,
@@ -48,5 +49,5 @@ export const subscriptionsListOptions = (referenceId?: string) =>
 
       return result.data;
     },
-    staleTime: 30_000,
+    staleTime: QUERY_STALE_TIMES.PAYMENT,
   });

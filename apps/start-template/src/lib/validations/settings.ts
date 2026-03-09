@@ -1,6 +1,17 @@
 import { z } from "zod";
 
-import { emailSchema, passwordSchema } from "./shared";
+import { emailSchema } from "./shared";
+
+export const twoFactorPasswordSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+export const otpSchema = z.object({
+  otp: z
+    .string()
+    .length(6, "OTP must be exactly 6 digits")
+    .regex(/^\d+$/, "OTP must contain only digits"),
+});
 
 export const profileSchema = z.object({
   name: z
@@ -23,17 +34,6 @@ export const avatarUploadSchema = z.object({
     ),
 });
 
-export const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: passwordSchema,
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
 export const passkeySchema = z.object({
   name: z
     .string()
@@ -43,5 +43,4 @@ export const passkeySchema = z.object({
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 export type AvatarUploadFormData = z.infer<typeof avatarUploadSchema>;
-export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 export type PasskeyFormData = z.infer<typeof passkeySchema>;

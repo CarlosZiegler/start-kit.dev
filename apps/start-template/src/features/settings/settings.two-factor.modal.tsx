@@ -35,17 +35,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth/auth-client";
-
-const passwordSchema = z.object({
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
-
-const otpSchema = z.object({
-  otp: z
-    .string()
-    .length(6, "OTP must be exactly 6 digits")
-    .regex(/^\d+$/, "OTP must contain only digits"),
-});
+import {
+  otpSchema,
+  twoFactorPasswordSchema,
+} from "@/lib/validations/settings";
 
 type TwoFactorAuthModalProps = {
   open: boolean;
@@ -119,8 +112,8 @@ export function TwoFactorAuthModal({
   const [showQrCode, setShowQrCode] = useState(false);
   const [totpUri, setTotpUri] = useState("");
 
-  const passwordForm = useForm<z.infer<typeof passwordSchema>>({
-    resolver: zodResolver(passwordSchema),
+  const passwordForm = useForm<z.infer<typeof twoFactorPasswordSchema>>({
+    resolver: zodResolver(twoFactorPasswordSchema),
     defaultValues: { password: "" },
   });
 
@@ -137,7 +130,7 @@ export function TwoFactorAuthModal({
     enableTwoFactor.isPending ||
     verifyTotp.isPending;
 
-  const onSubmitPassword = (value: z.infer<typeof passwordSchema>) => {
+  const onSubmitPassword = (value: z.infer<typeof twoFactorPasswordSchema>) => {
     if (isTwoFactorEnabled) {
       // Disable 2FA
       disableTwoFactor.mutate(

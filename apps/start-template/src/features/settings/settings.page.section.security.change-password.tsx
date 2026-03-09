@@ -22,33 +22,16 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { authClient } from "@/lib/auth/auth-client";
+import { changePasswordOptions } from "@/features/settings/settings.factory.mutations";
 import {
   type ChangePasswordFormData,
   changePasswordSchema,
-} from "@/lib/validations/settings";
+} from "@/lib/validations/auth";
 
 export function ChangePasswordSection() {
   const { t } = useTranslation();
   const changePassword = useMutation({
-    mutationFn: async ({
-      currentPassword,
-      newPassword,
-    }: ChangePasswordFormData) => {
-      const result = await authClient.changePassword({
-        currentPassword,
-        newPassword,
-      });
-      if (result.error) {
-        throw new Error(
-          result.error.message || t("SETTINGS_SECURITY_PASSWORD_CHANGE_FAILED"),
-          {
-            cause: result.error,
-          }
-        );
-      }
-      return result;
-    },
+    ...changePasswordOptions(),
   });
 
   const passwordForm = useForm<ChangePasswordFormData>({
@@ -56,7 +39,7 @@ export function ChangePasswordSection() {
     defaultValues: {
       currentPassword: "",
       newPassword: "",
-      confirmPassword: "",
+      confirmNewPassword: "",
     },
   });
 
@@ -132,16 +115,16 @@ export function ChangePasswordSection() {
 
             <Controller
               control={passwordForm.control}
-              name="confirmPassword"
+              name="confirmNewPassword"
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="confirmPassword">
+                  <FieldLabel htmlFor="confirmNewPassword">
                     {t("CONFIRM_NEW_PASSWORD")}
                   </FieldLabel>
                   <Input
                     aria-invalid={fieldState.invalid}
                     autoComplete="new-password"
-                    id="confirmPassword"
+                    id="confirmNewPassword"
                     type="password"
                     {...field}
                   />

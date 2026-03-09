@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { authClient } from "@/lib/auth/auth-client";
+import { QUERY_STALE_TIMES } from "@/lib/config/query-config";
 import { orpc } from "@/orpc/orpc-client";
 
 export const organizationKeys = {
@@ -33,7 +34,7 @@ export const organizationInvitationsOptions = (organizationId: string) =>
       }
       return data;
     },
-    staleTime: 30_000,
+    staleTime: QUERY_STALE_TIMES.ORGANIZATION_INVITATIONS,
   });
 
 export const organizationMembersOptions = (
@@ -60,7 +61,7 @@ export const organizationMembersOptions = (
       }
       return data;
     },
-    staleTime: 15_000,
+    staleTime: QUERY_STALE_TIMES.ORGANIZATION_MEMBERS,
   });
 
 export const activeMemberOptions = (organizationId: string) =>
@@ -77,7 +78,7 @@ export const activeMemberOptions = (organizationId: string) =>
       }
       return data;
     },
-    staleTime: 15_000,
+    staleTime: QUERY_STALE_TIMES.ACTIVE_MEMBER,
   });
 
 export const invitationByIdOptions = (invitationId: string) =>
@@ -115,12 +116,11 @@ export const userInvitationsOptions = () =>
           ids: data.map((invitation) => invitation.organizationId),
         });
 
+      const orgMap = new Map(organizations.map((org) => [org.id, org]));
       return data.map((invitation) => ({
         ...invitation,
-        organization: organizations.find(
-          (organization) => organization.id === invitation.organizationId
-        ),
+        organization: orgMap.get(invitation.organizationId),
       }));
     },
-    staleTime: 30_000,
+    staleTime: QUERY_STALE_TIMES.ORGANIZATION_INVITATIONS,
   });
