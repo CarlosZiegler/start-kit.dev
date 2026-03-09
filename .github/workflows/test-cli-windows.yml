@@ -1,0 +1,101 @@
+name: test-cli-windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      cli_version:
+        description: "CLI version to test (local = build from repo, latest = npm latest, or specific like 0.1.9)"
+        required: true
+        default: "local"
+        type: string
+  push:
+    paths:
+      - "packages/cli/**"
+    branches:
+      - main
+
+concurrency:
+  group: test-cli-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-cli:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CLI_VERSION: ${{ inputs.cli_version || 'local' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # --- Local build path ---
+      - name: Install dependencies (local)
+        if: env.CLI_VERSION == 'local'
+        working-directory: packages/cli
+        run: bun install
+
+      - name: Run unit tests (local)
+        if: env.CLI_VERSION == 'local'
+        working-directory: packages/cli
+        run: bun test
+
+      - name: Build CLI (local)
+        if: env.CLI_VERSION == 'local'
+        working-directory: packages/cli
+        run: bun run build
+
+      # --- npm version path ---
+      - name: Install CLI from npm
+        if: env.CLI_VERSION != 'local'
+        shell: bash
+        run: |
+          if [ "$CLI_VERSION" = "latest" ]; then
+            npm install -g create-start-kit-dev@latest
+          else
+            npm install -g "create-start-kit-dev@$CLI_VERSION"
+          fi
+          echo "Installed version:"
+          npm list -g create-start-kit-dev
+
+      # --- Scaffold test ---
+      - name: Test scaffold (local build)
+        if: env.CLI_VERSION == 'local'
+        shell: bash
+        run: |
+          mkdir -p /tmp/cli-test && cd /tmp/cli-test
+          node "$GITHUB_WORKSPACE/packages/cli/dist/index.mjs" test-app --skip-setup 2>&1 || true
+
+          if [ -f "test-app/package.json" ]; then
+            echo "✅ SUCCESS (local): package.json found"
+          else
+            echo "❌ FAIL (local): package.json not found"
+            ls -la test-app/ 2>/dev/null || echo "(directory does not exist)"
+            exit 1
+          fi
+
+      - name: Test scaffold (npm version)
+        if: env.CLI_VERSION != 'local'
+        shell: bash
+        run: |
+          mkdir -p /tmp/cli-test && cd /tmp/cli-test
+          create-start-kit-dev test-app --skip-setup 2>&1 || true
+
+          if [ -f "test-app/package.json" ]; then
+            echo "✅ SUCCESS ($CLI_VERSION): package.json found"
+          else
+            echo "❌ FAIL ($CLI_VERSION): package.json not found"
+            ls -la test-app/ 2>/dev/null || echo "(directory does not exist)"
+            exit 1
+          fi
+
+      - name: Cleanup
+        if: always()
+        shell: bash
+        run: rm -rf /tmp/cli-test
