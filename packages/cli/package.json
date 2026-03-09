@@ -1,6 +1,6 @@
 {
 	"name": "create-start-kit-dev",
-	"version": "0.1.9",
+	"version": "0.1.10",
 	"description": "Create full-stack TypeScript SaaS apps with TanStack Start, Bun, Drizzle, Better-Auth, and Stripe in seconds",
 	"type": "module",
 	"license": "MIT",

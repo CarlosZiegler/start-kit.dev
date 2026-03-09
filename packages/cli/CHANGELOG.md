@@ -2,6 +2,18 @@
 
 All notable changes to `create-start-kit-dev` will be documented in this file.
 
+## [0.1.10] - 2026-03-09
+
+### Fixed
+
+- Fix template extraction on Windows where `giget` tar extraction with subdirectory templates can place files at the drive root instead of the target directory
+- Add `fixExtraction()` post-extraction step that detects and corrects nested directory structures (e.g., `targetDir/apps/start-template/`) by moving files up to the expected location
+- Add validation after extraction to verify `package.json` exists in the target directory, with helpful error messages on failure
+
+### Changed
+
+- Updated CLI dependencies to latest versions
+
 ## [0.1.9] - 2026-02-23
 
 ### Fixed
