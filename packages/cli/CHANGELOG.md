@@ -2,6 +2,17 @@
 
 All notable changes to `create-start-kit-dev` will be documented in this file.
 
+## [0.1.11] - 2026-03-10
+
+### Fixed
+
+- Fix cross-platform template extraction: add fallback that downloads the full repo when `giget` subdirectory extraction fails (Windows tar path bug)
+- Fix CI test workflow: add missing `create` subcommand to scaffold test commands
+
+### Added
+
+- `--skip-setup` flag for `create` command to skip dependency installation and interactive wizard (useful for CI testing)
+
 ## [0.1.10] - 2026-03-09
 
 ### Fixed
