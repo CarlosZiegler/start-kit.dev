@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p /tmp/cli-test && cd /tmp/cli-test
-          node "$GITHUB_WORKSPACE/packages/cli/dist/index.mjs" test-app --skip-setup 2>&1 || true
+          node "$GITHUB_WORKSPACE/packages/cli/dist/index.mjs" create test-app --skip-setup 2>&1 || true
 
           if [ -f "test-app/package.json" ]; then
             echo "✅ SUCCESS (local): package.json found"
@@ -85,7 +85,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p /tmp/cli-test && cd /tmp/cli-test
-          create-start-kit-dev test-app --skip-setup 2>&1 || true
+          create-start-kit-dev create test-app --skip-setup 2>&1 || true
 
           if [ -f "test-app/package.json" ]; then
             echo "✅ SUCCESS ($CLI_VERSION): package.json found"

@@ -145,14 +145,22 @@ function showUsage(): void {
 async function handleCreate(args: string[]): Promise<void> {
   const firstArg = args.at(1);
   const projectName = firstArg && !firstArg.startsWith("--") ? firstArg : undefined;
+  const skipSetup = args.includes("--skip-setup");
 
   intro("Start Kit — Create New Project");
 
-  const targetDir = await runScaffold(projectName);
+  const targetDir = await runScaffold(projectName, {
+    skipInstall: skipSetup,
+  });
 
   const themeConfig = parseThemeArgs(args);
   if (themeConfig) {
     applyTheme(targetDir, themeConfig);
+  }
+
+  if (skipSetup) {
+    outro("Project scaffolded successfully!");
+    return;
   }
 
   // Change working directory to the new project

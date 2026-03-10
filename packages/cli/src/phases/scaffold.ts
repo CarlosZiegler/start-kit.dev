@@ -1,4 +1,11 @@
-import { existsSync, readdirSync, renameSync, rmSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { isCancel, log, spinner, text } from "@clack/prompts";
 import { downloadTemplate } from "giget";
@@ -7,6 +14,8 @@ import { exec } from "../lib/helpers";
 import { isValidAppName, toKebabCase } from "../lib/validators";
 
 const TEMPLATE_URI = "gh:CarlosZiegler/start-kit.dev/apps/start-template#main";
+const TEMPLATE_REPO_URI = "gh:CarlosZiegler/start-kit.dev#main";
+const TEMPLATE_SUBDIR = join("apps", "start-template");
 
 /**
  * On Windows, giget's tar extraction with subdirectory templates can produce
@@ -36,13 +45,35 @@ function fixExtraction(targetDir: string): void {
     const singleDir = join(targetDir, entries[0]);
     if (
       existsSync(join(singleDir, "package.json")) &&
-      existsSync(singleDir)
+      statSync(singleDir).isDirectory()
     ) {
       const tempDir = `${targetDir}-temp-${Date.now()}`;
       renameSync(singleDir, tempDir);
       rmSync(targetDir, { recursive: true, force: true });
       renameSync(tempDir, targetDir);
     }
+  }
+}
+
+/**
+ * Fallback: download the full repo and copy just the subdirectory.
+ * This avoids giget's subdirectory tar extraction bugs on Windows.
+ */
+async function fallbackDownload(targetDir: string): Promise<void> {
+  const tmpDir = `${targetDir}-fallback-${Date.now()}`;
+  try {
+    await downloadTemplate(TEMPLATE_REPO_URI, {
+      dir: tmpDir,
+      force: true,
+    });
+
+    const subdirPath = join(tmpDir, TEMPLATE_SUBDIR);
+    if (existsSync(join(subdirPath, "package.json"))) {
+      rmSync(targetDir, { recursive: true, force: true });
+      cpSync(subdirPath, targetDir, { recursive: true });
+    }
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
   }
 }
 
@@ -64,6 +95,19 @@ async function fetchTemplate(targetDir: string): Promise<void> {
 
   fixExtraction(targetDir);
 
+  // Fallback: if subdirectory extraction failed (common on Windows),
+  // download the full repo and copy the subdirectory manually
+  if (!existsSync(join(targetDir, "package.json"))) {
+    s.start("Retrying template extraction...");
+    try {
+      await fallbackDownload(targetDir);
+      s.stop("Template extracted");
+    } catch (error) {
+      s.stop("Fallback extraction failed");
+      log.error(String(error));
+    }
+  }
+
   if (!existsSync(join(targetDir, "package.json"))) {
     log.error(
       "Template extraction failed: package.json not found in target directory."
@@ -71,7 +115,9 @@ async function fetchTemplate(targetDir: string): Promise<void> {
     log.info(
       "This is a known issue with template extraction on some platforms."
     );
-    log.info(`Target directory contents: ${readdirSync(targetDir).join(", ") || "(empty)"}`);
+    log.info(
+      `Target directory contents: ${readdirSync(targetDir).join(", ") || "(empty)"}`
+    );
     process.exit(1);
   }
 
@@ -99,7 +145,14 @@ async function installDeps(targetDir: string): Promise<void> {
   s.stop("Dependencies installed");
 }
 
-export async function runScaffold(projectNameArg?: string): Promise<string> {
+export interface ScaffoldOptions {
+  skipInstall?: boolean;
+}
+
+export async function runScaffold(
+  projectNameArg?: string,
+  options?: ScaffoldOptions
+): Promise<string> {
   let projectName = projectNameArg;
 
   if (!projectName) {
@@ -129,7 +182,10 @@ export async function runScaffold(projectNameArg?: string): Promise<string> {
   log.info(`Creating project in ./${dirName}`);
 
   await fetchTemplate(targetDir);
-  await installDeps(targetDir);
+
+  if (!options?.skipInstall) {
+    await installDeps(targetDir);
+  }
 
   // Remove the state file if it exists from the template
   rmSync(resolve(targetDir, ".setup-state.json"), { force: true });
