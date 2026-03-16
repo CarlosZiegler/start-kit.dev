@@ -65,12 +65,12 @@ export function createViteConfig({ runtime }: RuntimeOptions) {
 				external: ["bun"],
 			},
 		},
+		resolve: {
+			tsconfigPaths: true,
+		},
 		plugins: [
 			reflectPolyfillPlugin(),
 			devtools(),
-			tsConfigPaths({
-				projects: ["./tsconfig.json"],
-			}),
 			postgres({
 				referrer: "start-template",
 			}),
