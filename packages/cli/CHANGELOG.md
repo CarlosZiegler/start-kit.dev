@@ -2,6 +2,12 @@
 
 All notable changes to `create-start-kit-dev` will be documented in this file.
 
+## [0.1.12] - 2026-03-17
+
+### Changed
+
+- Updated dependencies to latest versions
+
 ## [0.1.11] - 2026-03-10
 
 ### Fixed
