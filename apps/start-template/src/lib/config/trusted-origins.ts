@@ -52,7 +52,7 @@ export function isOriginTrusted(
 		if (allowed.includes("*")) {
 			const escaped = allowed
 				.replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-				.replace(/\\\*/g, "[^/]+");
+				.replace(/\*/g, "[^/]+");
 			return new RegExp(`^${escaped}$`).test(origin);
 		}
 		return allowed === origin;

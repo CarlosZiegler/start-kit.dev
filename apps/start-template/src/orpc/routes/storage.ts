@@ -1,5 +1,5 @@
 import { ORPCError } from "@orpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { file } from "@/lib/db/schema";
@@ -19,10 +19,6 @@ export const storageRouter = orpc.router({
     )
     .handler(async ({ input, context }) => {
       const { session } = context;
-
-      if (!session?.user?.id) {
-        throw new ORPCError("UNAUTHORIZED");
-      }
 
       const result = await storage.uploadFile(input.file, {
         userId: session.user.id,
@@ -66,10 +62,6 @@ export const storageRouter = orpc.router({
     .handler(async ({ input, context }) => {
       const { session } = context;
 
-      if (!session?.user?.id) {
-        throw new ORPCError("UNAUTHORIZED");
-      }
-
       const [fileRecord] = await context.db
         .select()
         .from(file)
@@ -105,10 +97,6 @@ export const storageRouter = orpc.router({
     .handler(async ({ input, context }) => {
       const { session } = context;
 
-      if (!session?.user?.id) {
-        throw new ORPCError("UNAUTHORIZED");
-      }
-
       const [fileRecord] = await context.db
         .select()
         .from(file)
@@ -143,10 +131,6 @@ export const storageRouter = orpc.router({
     .handler(async ({ input, context }) => {
       const { session } = context;
 
-      if (!session?.user?.id) {
-        throw new ORPCError("UNAUTHORIZED");
-      }
-
       const { key, url } = await storage.presignUpload(
         input.fileName,
         input.purpose,
@@ -174,10 +158,6 @@ export const storageRouter = orpc.router({
     )
     .handler(async ({ input, context }) => {
       const { session } = context;
-
-      if (!session?.user?.id) {
-        throw new ORPCError("UNAUTHORIZED");
-      }
 
       const [fileRecord] = await context.db
         .select()
@@ -221,32 +201,34 @@ export const storageRouter = orpc.router({
     .handler(async ({ input, context }) => {
       const { session } = context;
 
-      if (!session?.user?.id) {
-        throw new ORPCError("UNAUTHORIZED");
-      }
+      // Show user's personal files OR their active org's files (matching RLS OR logic)
+      const ownershipCondition = session.session.activeOrganizationId
+        ? or(
+            eq(file.userId, session.user.id),
+            eq(file.organizationId, session.session.activeOrganizationId)
+          )
+        : eq(file.userId, session.user.id);
 
-      const conditions = [eq(file.userId, session.user.id)];
+      const conditions = input.purpose
+        ? and(ownershipCondition, eq(file.purpose, input.purpose))
+        : ownershipCondition;
 
-      if (input.purpose) {
-        conditions.push(eq(file.purpose, input.purpose));
-      }
-
-      if (session.session.activeOrganizationId) {
-        conditions.push(
-          eq(file.organizationId, session.session.activeOrganizationId)
-        );
-      }
-
-      const files = await context.db
-        .select()
-        .from(file)
-        .where(and(...conditions))
-        .limit(input.limit)
-        .orderBy(file.createdAt);
+      const [files, [totalResult]] = await Promise.all([
+        context.db
+          .select()
+          .from(file)
+          .where(conditions)
+          .limit(input.limit)
+          .orderBy(file.createdAt),
+        context.db
+          .select({ count: count() })
+          .from(file)
+          .where(conditions),
+      ]);
 
       return {
         files,
-        total: files.length,
+        total: totalResult.count,
       };
     }),
 
@@ -258,10 +240,6 @@ export const storageRouter = orpc.router({
     )
     .handler(async ({ input, context }) => {
       const { session } = context;
-
-      if (!session?.user?.id) {
-        throw new ORPCError("UNAUTHORIZED");
-      }
 
       // Scope listing to current user or active organization prefix
       const prefix = session.session.activeOrganizationId

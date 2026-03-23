@@ -96,9 +96,7 @@ export const publicProcedure = orpc
   .use(onError(errorMiddleware))
   .use(timingMiddleware);
 
-export const protectedProcedure = publicProcedure
-  .use(onError(errorMiddleware))
-  .use(requireAuth);
+export const protectedProcedure = publicProcedure.use(requireAuth);
 
 const withRlsMiddleware = orpc.middleware(async ({ context, next }) => {
   if (!context.session?.user) {

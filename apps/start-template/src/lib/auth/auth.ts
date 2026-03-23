@@ -164,7 +164,7 @@ const getAuthConfig = createServerOnlyFn(() =>
 		},
 		emailAndPassword: {
 			enabled: true,
-			requireEmailVerification: env.BETTER_AUTH_REQUERI_EMAIL_VERIFICATION,
+			requireEmailVerification: env.BETTER_AUTH_REQUIRE_EMAIL_VERIFICATION,
 			disableSignUp: env.BETTER_AUTH_DISABLE_SIGN_UP,
 			async sendResetPassword({
 				url,

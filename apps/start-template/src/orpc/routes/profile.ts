@@ -22,10 +22,6 @@ export const profileRouter = orpc.router({
     .handler(async ({ input, context }) => {
       const { session } = context;
 
-      if (!session?.user?.id) {
-        throw new ORPCError("UNAUTHORIZED");
-      }
-
       const [updatedUser] = await context.db
         .update(user)
         .set({
@@ -44,19 +40,18 @@ export const profileRouter = orpc.router({
     .handler(async ({ input, context }) => {
       const { session } = context;
 
-      // Delete old avatar records from DB and upload new avatar in parallel
-      const [, result] = await Promise.all([
-        context.db
-          .delete(file)
-          .where(
-            and(eq(file.userId, session.user.id), eq(file.purpose, "avatar"))
-          ),
-        storage.uploadFile(input.file, {
-          userId: session.user.id,
-          purpose: "avatar",
-          fileName: input.file.name,
-        }),
-      ]);
+      // Upload new avatar first, then delete old (avoids losing avatar if upload fails)
+      const result = await storage.uploadFile(input.file, {
+        userId: session.user.id,
+        purpose: "avatar",
+        fileName: input.file.name,
+      });
+
+      await context.db
+        .delete(file)
+        .where(
+          and(eq(file.userId, session.user.id), eq(file.purpose, "avatar"))
+        );
 
       const [fileRecord] = await context.db
         .insert(file)

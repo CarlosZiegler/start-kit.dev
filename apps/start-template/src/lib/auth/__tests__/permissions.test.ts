@@ -9,6 +9,8 @@ import {
   canManageOrganization,
   canRemoveMembers,
   canUpdateMemberRoles,
+  hasOrganizationPermission,
+  hasPermission,
 } from "@/lib/auth/permissions";
 
 describe("role assignment behavior", () => {
@@ -120,5 +122,86 @@ describe("invitation deletion behavior", () => {
 
   it("member cannot delete invitations", () => {
     expect(canDeleteInvitations("member")).toBe(false);
+  });
+});
+
+describe("super_admin role behavior", () => {
+  it("can assign all roles including super_admin", () => {
+    expect(canAssignRole("super_admin", "super_admin")).toBe(true);
+    expect(canAssignRole("super_admin", "owner")).toBe(true);
+    expect(canAssignRole("super_admin", "admin")).toBe(true);
+    expect(canAssignRole("super_admin", "user")).toBe(true);
+  });
+
+  it("can manage organization", () => {
+    expect(canManageOrganization("owner")).toBe(true);
+  });
+
+  it("can delete organization", () => {
+    expect(canDeleteOrganization("owner")).toBe(true);
+  });
+
+  it("can invite members", () => {
+    expect(canInviteMembers("owner")).toBe(true);
+  });
+
+  it("can remove members", () => {
+    expect(canRemoveMembers("owner")).toBe(true);
+  });
+
+  it("can update member roles", () => {
+    expect(canUpdateMemberRoles("owner")).toBe(true);
+  });
+
+  it("can manage invitations", () => {
+    expect(canManageInvitations("owner")).toBe(true);
+  });
+
+  it("can delete invitations", () => {
+    expect(canDeleteInvitations("owner")).toBe(true);
+  });
+});
+
+describe("hasPermission", () => {
+  it("super_admin has organization delete permission", () => {
+    expect(hasPermission("super_admin", "organization", "delete")).toBe(true);
+  });
+
+  it("user does not have organization delete permission", () => {
+    expect(hasPermission("user", "organization", "delete")).toBe(false);
+  });
+
+  it("admin has member invite permission", () => {
+    expect(hasPermission("admin", "member", "invite")).toBe(true);
+  });
+
+  it("owner has all organization permissions", () => {
+    expect(hasPermission("owner", "organization", "create")).toBe(true);
+    expect(hasPermission("owner", "organization", "read")).toBe(true);
+    expect(hasPermission("owner", "organization", "update")).toBe(true);
+    expect(hasPermission("owner", "organization", "delete")).toBe(true);
+    expect(hasPermission("owner", "organization", "manage")).toBe(true);
+  });
+
+  it("returns false for non-existent resource", () => {
+    expect(hasPermission("admin", "nonexistent" as never, "read")).toBe(false);
+  });
+});
+
+describe("hasOrganizationPermission", () => {
+  it("owner has full organization permissions", () => {
+    expect(hasOrganizationPermission("owner", "organization", "delete")).toBe(true);
+    expect(hasOrganizationPermission("owner", "member", "remove")).toBe(true);
+  });
+
+  it("member has limited permissions", () => {
+    expect(hasOrganizationPermission("member", "organization", "read")).toBe(true);
+    expect(hasOrganizationPermission("member", "organization", "delete")).toBe(false);
+    expect(hasOrganizationPermission("member", "member", "invite")).toBe(false);
+  });
+
+  it("admin can manage members but not delete org", () => {
+    expect(hasOrganizationPermission("admin", "member", "invite")).toBe(true);
+    expect(hasOrganizationPermission("admin", "organization", "delete")).toBe(false);
   });
 });
