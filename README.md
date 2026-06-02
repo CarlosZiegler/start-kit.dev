@@ -22,6 +22,8 @@
 
 Ship your SaaS faster with a fully typed stack from UI to database. Start Kit gives you authentication, organizations, payments, AI chat, file storage, and 57 accessible UI components — all wired together with end-to-end type safety through oRPC and TanStack Query.
 
+This test line validates the documentation pull request workflow.
+
 ```bash
 bunx create-start-kit-dev create my-app
 ```
